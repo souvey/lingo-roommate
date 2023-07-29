@@ -365,10 +365,6 @@ script = ExtResource( 21 )
                 panels = new THREE.Group();
                 scene.add(panels);
 
-				panels.add(createPanel());
-                panels.add(createPanel());
-                panels.add(createPanel());
-
 				// const geometry = new THREE.BoxGeometry();
 
 				// for ( let i = 0; i < 2000; i ++ ) {
@@ -439,6 +435,10 @@ script = ExtResource( 21 )
                 document.querySelector('.overlay-right').addEventListener('pointerdown', function(e) {e.stopPropagation();});
                 document.querySelector('.overlay-right').addEventListener('pointerup', function(e) {e.stopPropagation();});
                 document.querySelector('.overlay-right').addEventListener('pointermove', function(e) {e.stopPropagation();});
+                document.querySelector('.overlay-left').addEventListener('keydown', function(e) {e.stopPropagation();});
+                document.querySelector('.overlay-left').addEventListener('keyup', function(e) {e.stopPropagation();});
+                document.querySelector('.overlay-right').addEventListener('keydown', function(e) {e.stopPropagation();});
+                document.querySelector('.overlay-right').addEventListener('keyup', function(e) {e.stopPropagation();});
 
 				window.addEventListener( 'resize', onWindowResize );
 
@@ -585,24 +585,7 @@ script = ExtResource( 21 )
 					raycaster.layers.set( 0 );
 					const intersection = raycaster.intersectObjects(panels.children);
 					if (intersection.length > 0) {
-                        if (inspectorPane) {
-                            inspectorPane.dispose();
-                        }
-                        const panel = intersection[0].object.parent;
-						transformControl.attach(panel);
-						transformControl2.attach(panel);
-                        inspectorPane = new Tweakpane.Pane({container: document.querySelector(".overlay-right"), title: 'Panel'});
-                        inspectorPane.registerPlugin(TweakpaneEssentialsPlugin);
-                        inspectorPane.addInput(panel, 'position', {
-                            groupName: 'position'
-                        });
-                        inspectorPane.addInput(panel.userData, 'text', {
-                            groupName: 'text',
-                        }).on('change', function(e) { redrawPanel(panel) });
-                        inspectorPane.addInput(panel.userData, 'answer', {
-                            groupName: 'answer',
-                        }).on('change', function(e) { redrawPanel(panel) });
-                        inspectorPane.on('change', function(e) { render() });
+                        selectPanel(intersection[0].object.parent);
 					} else {
                         transformControl.detach();
 					    transformControl2.detach();
@@ -616,6 +599,26 @@ script = ExtResource( 21 )
 				render();
 			}
 
+            function selectPanel(panel) {
+                if (inspectorPane) {
+                    inspectorPane.dispose();
+                }
+                transformControl.attach(panel);
+                transformControl2.attach(panel);
+                inspectorPane = new Tweakpane.Pane({container: document.querySelector(".overlay-right"), title: 'Panel'});
+                inspectorPane.registerPlugin(TweakpaneEssentialsPlugin);
+                inspectorPane.addInput(panel, 'position', {
+                    groupName: 'position'
+                });
+                inspectorPane.addInput(panel.userData, 'text', {
+                    groupName: 'text',
+                }).on('change', function(e) { redrawPanel(panel) });
+                inspectorPane.addInput(panel.userData, 'answer', {
+                    groupName: 'answer',
+                }).on('change', function(e) { redrawPanel(panel) });
+                inspectorPane.on('change', function(e) { render() });                
+            }
+
 			function onContextMenu( event ) {
 				event.preventDefault();
 			}
@@ -627,7 +630,7 @@ script = ExtResource( 21 )
 				} else if (gridmapPlane.visible && event.code == "KeyE" && !event.repeat) {
 					gridmapPlane.position.y += 1;
 					render();
-				} else if ((event.code == "Escape" || event.code == "Delete") && !event.repeat) {
+				} else if ((event.code == "Escape" || event.code == "Delete" || event.code == "KeyP") && !event.repeat) {
                     const selected = transformControl.object;
 					controls.enableRotate = true;
 					controls.enablePan = true;
@@ -642,6 +645,11 @@ script = ExtResource( 21 )
                     }
                     if (event.code == "Delete" && selected) {
                         selected.removeFromParent();
+                    }
+                    if (event.code == "KeyP") {
+                        const panel = createPanel();
+                        panels.add(panel);
+                        selectPanel(panel);
                     }
 					render();
 				}
@@ -666,6 +674,7 @@ script = ExtResource( 21 )
 				<li>Escape: deselect</li>
 				<li>Q: floor up</li>
 				<li>E: floor down</li>
+                <li>P: add panel</li>
 				<li>Left click: place block / rotate camera</li>
 				<li>Right click: remove block / pan camera</li>
 				<li>Mouse wheel: zoom camera</li>
