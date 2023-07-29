@@ -358,7 +358,7 @@ script = ExtResource( 21 )
 				const panelMaterial = new THREE.MeshBasicMaterial({side: THREE.DoubleSide});
 				panelMaterial.map = new THREE.CanvasTexture(offscreen);
 				const panelMesh = new THREE.Mesh( panelGeometry, panelMaterial );
-				panelMesh.position.set(0, 0.5, 0.501);
+				panelMesh.position.set(0, 0, 0.501);
 				panelMesh.scale.set(0.9, 0.9, 0.9);
 				panelGroup = new THREE.Group()
 				panelGroup.position.set(0.5, 0.5, 0.5);
