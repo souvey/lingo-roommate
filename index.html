@@ -71,6 +71,8 @@
 		</style>
 	</head>
 	<body>
+        <script src="https://cdn.jsdelivr.net/npm/tweakpane@3.1.10/dist/tweakpane.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@tweakpane/plugin-essentials@0.1.8/dist/tweakpane-plugin-essentials.min.js"></script>
         <script src="https://unpkg.com/@popperjs/core@2"></script>
         <script src="https://unpkg.com/tippy.js@6"></script>        
 		<script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
@@ -273,6 +275,8 @@ script = ExtResource( 21 )
 			let transformControl, transformControl2;
 			let panels;
 
+            let inspectorPane;
+
 			let INTERSECTED;
 			let theta = 0;
 
@@ -429,6 +433,13 @@ script = ExtResource( 21 )
 				document.addEventListener( 'keydown', onDocumentKeyDown );
 				document.addEventListener( 'keyup', onDocumentKeyUp );
 
+                document.querySelector('.overlay-left').addEventListener('pointerdown', function(e) {e.stopPropagation();});
+                document.querySelector('.overlay-left').addEventListener('pointerup', function(e) {e.stopPropagation();});
+                document.querySelector('.overlay-left').addEventListener('pointermove', function(e) {e.stopPropagation();});
+                document.querySelector('.overlay-right').addEventListener('pointerdown', function(e) {e.stopPropagation();});
+                document.querySelector('.overlay-right').addEventListener('pointerup', function(e) {e.stopPropagation();});
+                document.querySelector('.overlay-right').addEventListener('pointermove', function(e) {e.stopPropagation();});
+
 				window.addEventListener( 'resize', onWindowResize );
 
 				var materialsElement = document.querySelector(".materials");
@@ -560,16 +571,26 @@ script = ExtResource( 21 )
 					raycaster.layers.set( 0 );
 					const intersection = raycaster.intersectObjects(panels.children);
 					if (intersection.length > 0) {
+                        if (inspectorPane != null) {
+                            inspectorPane.dispose();
+                        }
 						transformControl.attach(intersection[0].object.parent);
 						transformControl2.attach(intersection[0].object.parent);
+                        inspectorPane = new Tweakpane.Pane({container: document.querySelector(".overlay-right"), title: 'Panel'});
+                        inspectorPane.registerPlugin(TweakpaneEssentialsPlugin);
+                        inspectorPane.addInput(intersection[0].object.parent, 'position', {
+                            groupName: 'position'
+                        });
+                        inspectorPane.on('change', function(e) { render() });
 					} else {
                         transformControl.detach();
 					    transformControl2.detach();
+                        inspectorPane.dispose();
+                        inspectorPane = null;
                     }
 				}
 
 				render();
-				event.preventDefault();
 			}
 
 			function onContextMenu( event ) {
@@ -591,6 +612,8 @@ script = ExtResource( 21 )
 					transformControl.detach();
 					transformControl2.detach();
 					gridmapPlane.visible = false;
+                    inspectorPane.dispose();
+                    inspectorPane = null;
 					render();
 				}
 			}
@@ -599,6 +622,9 @@ script = ExtResource( 21 )
 			}
 
 			function render() {
+                if (inspectorPane != null) {
+                    inspectorPane.refresh();
+                }
 				renderer.render( scene, camera );
 			}
 
