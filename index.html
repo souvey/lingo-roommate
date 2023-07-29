@@ -398,7 +398,10 @@ script = ExtResource( 21 )
 				transformControl = new TransformControls( camera, renderer.domElement );
 				transformControl.addEventListener( 'change', function(e) { render() } );
 				transformControl.addEventListener( 'dragging-changed', function ( event ) {
-					controls.enabled = ! event.value;
+					controls.enabled = !event.value && !transformControl2.dragging;
+                    if (event.value) {
+                        transformControl2.dragging = false;
+                    }
 				} );
 				transformControl.setTranslationSnap(1);
 				transformControl.size = 1;
@@ -410,7 +413,10 @@ script = ExtResource( 21 )
 				transformControl2 = new TransformControls( camera, renderer.domElement );
 				transformControl2.addEventListener( 'change', function(e) { render() } );
 				transformControl2.addEventListener( 'dragging-changed', function ( event ) {
-					controls.enabled = ! event.value;
+					controls.enabled = !event.value && !transformControl.dragging;
+                    if (event.value) {
+                        transformControl.dragging = false;
+                    }
 				} );
 				transformControl2.setTranslationSnap(0.5);
 				transformControl2.size = 0.5;
@@ -527,7 +533,10 @@ script = ExtResource( 21 )
 					if (intersection.length > 0) {
 						transformControl.attach(panelGroup);
 						transformControl2.attach(panelGroup);
-					}
+					} else if (!transformControl.dragging && !transformControl2.dragging) {
+                        transformControl.detach();
+					    transformControl2.detach();
+                    }
 				}
 
 				render();
