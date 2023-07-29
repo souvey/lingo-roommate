@@ -60,9 +60,19 @@
 					#fff 10px
 				);
 			}
+            .material-gloss {
+                position: absolute;
+                top: 0;
+                right: 0;
+                left: 0;
+                bottom: 0;
+                background: linear-gradient(to bottom, rgba(255,255,255,0.76) 0%,rgba(255,255,255,0) 100%);
+            }
 		</style>
 	</head>
 	<body>
+        <script src="https://unpkg.com/@popperjs/core@2"></script>
+        <script src="https://unpkg.com/tippy.js@6"></script>        
 		<script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
 		<script type="importmap">
             {
@@ -447,6 +457,16 @@ script = ExtResource( 21 )
 						gridmapPlane.visible = true;
 						render();
 					})
+                    if (value.roughness < 1) {
+                        var glossElement = document.createElement("div");
+                        glossElement.classList.add("material-gloss");
+                        glossElement.style.opacity = (1 - value.roughness);
+                        materialElement.appendChild(glossElement);
+                    }
+                    tippy(materialElement, {
+                        content: value.name,
+                        delay: [200, 0],
+                    });
 					materialsElement.appendChild(materialElement);
 				}
 
