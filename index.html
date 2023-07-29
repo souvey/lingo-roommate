@@ -484,23 +484,37 @@ script = ExtResource( 21 )
 				render();
 			}
 
+            function redrawPanel(panel) {
+                const ctx = panel.userData.canvasCtx;
+				ctx.font = "48px serif";
+				ctx.fillStyle = "white";
+				ctx.textAlign = "center";
+                ctx.clearRect(0, 0, 256, 256);
+				ctx.fillText(panel.userData.text.toUpperCase(), 128, 96);
+				ctx.fillStyle = "#999";
+				ctx.fillText(panel.userData.answer.toUpperCase(), 128, 172);
+                panel.children[0].material.map.needsUpdate = true;
+            }
+
             function createPanel() {
                 const panelGeometry = new THREE.PlaneGeometry( 1, 1);				
 				const offscreen = new OffscreenCanvas(256, 256);
 				const ctx = offscreen.getContext("2d");
-				ctx.font = "48px serif";
-				ctx.fillStyle = "white";
-				ctx.textAlign = "center";
-				ctx.fillText("HI", 128, 128);
 				const panelMaterial = new THREE.MeshBasicMaterial({side: THREE.DoubleSide});
 				panelMaterial.map = new THREE.CanvasTexture(offscreen);
 				const panelMesh = new THREE.Mesh( panelGeometry, panelMaterial );
 				panelMesh.position.set(0, 0, 0.501);
 				panelMesh.scale.set(0.9, 0.9, 0.9);
-				const panelGroup = new THREE.Group()
-				panelGroup.position.set(0.5, 0.5, 0.5);
-				panelGroup.add(panelMesh);
-                return panelGroup;
+				const panel = new THREE.Group()
+				panel.position.set(0.5, 0.5, 0.5);
+				panel.add(panelMesh);
+                panel.userData = {
+                    text: "HI",
+                    answer: "HI",
+                    canvasCtx: ctx,
+                };
+                redrawPanel(panel);
+                return panel;
             }
 
 			function onWindowResize() {
@@ -574,13 +588,20 @@ script = ExtResource( 21 )
                         if (inspectorPane) {
                             inspectorPane.dispose();
                         }
-						transformControl.attach(intersection[0].object.parent);
-						transformControl2.attach(intersection[0].object.parent);
+                        const panel = intersection[0].object.parent;
+						transformControl.attach(panel);
+						transformControl2.attach(panel);
                         inspectorPane = new Tweakpane.Pane({container: document.querySelector(".overlay-right"), title: 'Panel'});
                         inspectorPane.registerPlugin(TweakpaneEssentialsPlugin);
-                        inspectorPane.addInput(intersection[0].object.parent, 'position', {
+                        inspectorPane.addInput(panel, 'position', {
                             groupName: 'position'
                         });
+                        inspectorPane.addInput(panel.userData, 'text', {
+                            groupName: 'text',
+                        }).on('change', function(e) { redrawPanel(panel) });
+                        inspectorPane.addInput(panel.userData, 'answer', {
+                            groupName: 'answer',
+                        }).on('change', function(e) { redrawPanel(panel) });
                         inspectorPane.on('change', function(e) { render() });
 					} else {
                         transformControl.detach();
