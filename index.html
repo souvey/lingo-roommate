@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>Lingo RoomMate</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+			body {
+				margin: 0;
+				overscroll-behavior: none;
+			}
+			.overlay-left {
+				position: fixed;
+				left: 16px;
+				top: 16px;
+				background: white;
+				padding: 16px;
+				max-height: 100%;
+				max-width: 25%;
+				box-sizing: border-box;
+				overflow: auto;
+			}
+			.overlay-right {
+				position: fixed;
+				right: 16px;
+				top: 16px;
+				background: white;
+				padding: 16px;
+				max-height: 100%;
+				max-width: 25%;
+				box-sizing: border-box;
+				overflow: auto;
+			}
+			.materials {
+				line-height: 0;
+			}
+			.material {
+				display: inline-block;
+				width: 32px;
+				height: 32px;
+				border-radius: 4px;
+				margin: 4px;
+				border: 1px solid rgba(0, 0, 0, 0.25);
+				position: relative;
+				overflow: hidden;
+			}
+			.material::after {
+				content: '';
+				position: absolute;
+				z-index: -1;
+				left: 0;
+				right: 0;
+				bottom: 0;
+				top: 0;
+				background: repeating-linear-gradient(
+					45deg,
+					#999,
+					#999 5px,
+					#fff 5px,
+					#fff 10px
+				);
+			}
+		</style>
+	</head>
+	<body>
+		<script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+		<script type="importmap">
+            {
+                "imports": {
+                    "three": "https://unpkg.com/three/build/three.module.js",
+                    "three/": "https://unpkg.com/three/"
+                }
+            }
+        </script>
+		<script type="module">
+			import * as THREE from 'three';
+			import { Sky } from 'three/examples/jsm/objects/Sky.js';
+			import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+			import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js'
+			import { CSS3DRenderer } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
+
+			materials = new Map(Object.entries({
+				0: {name: "yellowBlock", albedo: "#a6aa19", alpha: 1, roughness: 1},
+				1: {name: "greenBlock", albedo: "#108e29", alpha: 1, roughness: 0.6},
+				2: {name: "brownBlock", albedo: "#895409", alpha: 1, roughness: 1},
+				3: {name: "blueBlock", albedo: "#094a89", alpha: 1, roughness: 1},
+				4: {name: "whiteBlock", albedo: "#ffffff", alpha: 1, roughness: 0},
+				5: {name: "blackBlock", albedo: "#000000", alpha: 1, roughness: 0},
+				6: {name: "redBlock", albedo: "#aa1919", alpha: 1, roughness: 0.6},
+				7: {name: "purpleBlock", albedo: "#8a19aa", alpha: 1, roughness: 0.41},
+				8: {name: "sunBlock", albedo: "#ffff00", alpha: 1, roughness: 0},
+				9: {name: "orangeBlock", albedo: "#ff8900", alpha: 1, roughness: 1},
+				10: {name: "pinkBlock", albedo: "#ff59ad", alpha: 1, roughness: 1},
+				11: {name: "lightBlueBlock", albedo: "#66a8e8", alpha: 1, roughness: 1},
+				12: {name: "lightBrownBlock", albedo: "#b4944c", alpha: 1, roughness: 0.18},
+				13: {name: "lightGrayBlock", albedo: "#b1b1b1", alpha: 1, roughness: 1},
+				14: {name: "darkGrayBlock", albedo: "#464646", alpha: 1, roughness: 1},
+				15: {name: "brightRedBlock", albedo: "#ff0000", alpha: 1, roughness: 1},
+				16: {name: "aquaBlock", albedo: "#00ffb1", alpha: 1, roughness: 1},
+				17: {name: "glassBlock", albedo: "#9d9d9d", alpha: 0.4/*0.172549*/, roughness: 1},
+				18: {name: "tealBlock", albedo: "#2791a5", alpha: 1, roughness: 1},
+				19: {name: "magentaBlock", albedo: "#ff00be", alpha: 1, roughness: 1},
+				20: {name: "limeBlock", albedo: "#4aff00", alpha: 1, roughness: 1},
+				21: {name: "creamBlock", albedo: "#f3d793", alpha: 1, roughness: 1},
+				56: {name: "darkCyanBlock", albedo: "#0d363a", alpha: 1, roughness: 1},
+				57: {name: "darkBlueBlock", albedo: "#000033", alpha: 1, roughness: 1},
+				58: {name: "darkPinkBlock", albedo: "#330033", alpha: 1, roughness: 1},
+				59: {name: "darkPurpleBlock", albedo: "#140033", alpha: 1, roughness: 1},
+				60: {name: "darkRedBlock", albedo: "#330000", alpha: 1, roughness: 1},
+				61: {name: "darkYellowBlock", albedo: "#333300", alpha: 1, roughness: 1},
+				62: {name: "lightGrayBlockHalfAlpha", albedo: "#b0b0b0", alpha: 0.65098, roughness: 1},
+				63: {name: "pastelBlueBlock", albedo: "#a3a5ff", alpha: 1, roughness: 1},
+				64: {name: "pastelGreenBlock", albedo: "#ccffbb", alpha: 1, roughness: 1},
+				65: {name: "pastelPurpleBlock", albedo: "#cb9fff", alpha: 1, roughness: 1},
+				66: {name: "pastelRedBlock", albedo: "#ffc3c3", alpha: 1, roughness: 1},
+				67: {name: "pastelCyanBlock", albedo: "#a3fffb", alpha: 1, roughness: 1},
+				68: {name: "goldBlock", albedo: "#ecbd00", alpha: 1, roughness: 0},
+				69: {name: "silverBlock", albedo: "#bec2cb", alpha: 1, roughness: 0},
+				82: {name: "transparentWhiteBlock", albedo: "#ffffff", alpha: 0.65098, roughness: 1},
+				83: {name: "transparentBlackBlock", albedo: "#000000", alpha: 0.65098, roughness: 1},
+				84: {name: "transparentRedBlock", albedo: "#aa1919", alpha: 0.65098, roughness: 1},
+				85: {name: "transparentBlueBlock", albedo: "#094a89", alpha: 0.65098, roughness: 1},
+				86: {name: "transparentGreenBlock", albedo: "#108e29", alpha: 0.65098, roughness: 1},
+				87: {name: "transparentYellowBlock", albedo: "#ffff00", alpha: 0.65098, roughness: 1},
+				88: {name: "transparentPurpleBlock", albedo: "#8a19aa", alpha: 0.65098, roughness: 1},
+				89: {name: "transparentOrangeBlock", albedo: "#ff8900", alpha: 0.65098, roughness: 1},
+				90: {name: "transparentBrownBlock", albedo: "#895409", alpha: 0.65098, roughness: 1},
+				91: {name: "cyanBlock", albedo: "#00ffff", alpha: 1, roughness: 1},
+				92: {name: "plumBlock", albedo: "#991b51", alpha: 1, roughness: 0.6},
+				93: {name: "navyBlock", albedo: "#000070", alpha: 1, roughness: 1},
+				94: {name: "turquoiseBlock", albedo: "#029f84", alpha: 1, roughness: 0.41},
+				95: {name: "cobaltBlock", albedo: "#1818f0", alpha: 1, roughness: 0},
+				96: {name: "pastelWashedGreenBlock", albedo: "#77dd77", alpha: 1, roughness: 1},
+				97: {name: "pastelWashedPinkBlock", albedo: "#ff59ad", alpha: 1, roughness: 1},
+				98: {name: "mediumRedBlock", albedo: "#861515", alpha: 1, roughness: 1},
+				160: {name: "matteBlackBlock", albedo: "#000000", alpha: 1, roughness: 1},
+				163: {name: "transparentAquaBlock", albedo: "#00ffb1", alpha: 0.65098, roughness: 1},
+				164: {name: "transparentActualLimeBlock", albedo: "#80ff00", alpha: 0.65098, roughness: 1},
+				165: {name: "transparentBrightRedBlock", albedo: "#ff0000", alpha: 0.65098, roughness: 1},
+				166: {name: "transparentCobaltBlock", albedo: "#1818f0", alpha: 0.65098, roughness: 1},
+				167: {name: "transparentCreamBlock", albedo: "#f3d793", alpha: 0.65098, roughness: 1},
+				168: {name: "transparentCyanBlock", albedo: "#00ffff", alpha: 0.65098, roughness: 1},
+				169: {name: "transparentLightBrownBlock", albedo: "#b4944c", alpha: 0.65098, roughness: 1},
+				170: {name: "transparentLimeBlock", albedo: "#4aff00", alpha: 0.65098, roughness: 1},
+				171: {name: "transparentMagentaBlock", albedo: "#ff00be", alpha: 0.65098, roughness: 1},
+				172: {name: "transparentNavyBlock", albedo: "#000070", alpha: 0.65098, roughness: 1},
+				173: {name: "transparentPastelCyanBlock", albedo: "#a3fffb", alpha: 0.65098, roughness: 1},
+				174: {name: "transparentPastelRedBlock", albedo: "#ffc3c3", alpha: 0.65098, roughness: 1},
+				175: {name: "transparentPinkBlock", albedo: "#ff59ad", alpha: 0.65098, roughness: 1},
+				176: {name: "transparentTurquoiseBlock", albedo: "#029f84", alpha: 0.65098, roughness: 1},
+				177: {name: "actualLimeBlock", albedo: "#80ff00", alpha: 1, roughness: 0},
+				178: {name: "coralBlock", albedo: "#ff7f50", alpha: 1, roughness: 1},
+				181: {name: "decayedBlock", albedo: "#527914", alpha: 1, roughness: 1},
+			}));
+
+			function Cell(x, y, z, item, cube) {
+				this.x = x;
+				this.y = y;
+				this.z = z;
+				this.item = item;
+				this.cube = cube;
+			}
+			Cell.key = function (x, y, z) {
+				return `cell_${x}_${y}_${z}`;
+			}
+			Cell.prototype.serialize = function () {
+				if (this.item < 0) {
+					return [];
+				}
+				// WARNING: I believe this implementation is incorrect for numbers > 255.
+				// It looks like the Godot code maybe reverses individual bytes?
+				return [
+					((this.y & 0xFFFF) << 16) | this.x & 0xFFFF,
+					this.z & 0xFFFF,
+					// Ignore octant navigation (?) layer for now.
+					// Hopefully that isn't important.
+					this.item & 0xFFFF,
+				];
+			}
+			Cell.prototype.key = function () {
+				return Cell.key(this.x, this.y, this.z);
+			}
+
+			function State() {
+				this.minX = -10;
+				this.maxX = 9;
+				this.minZ = -10;
+				this.maxZ = 10;
+				this.minY = 0;
+				this.maxY = 2;
+				this.cells = new Map();  // [x,y,z] -> {item, ...}
+			}
+
+			State.prototype.serializeCells = function () {
+				var out = []
+				for (const [key, value] of this.cells) {
+					out = out.concat(value.serialize())
+				}
+				return out;
+			}
+
+			State.prototype.serialize = function () {
+				return `[gd_scene load_steps=9 format=2]
+
+[ext_resource path="res://nodes/player.tscn" type="PackedScene" id=2]
+[ext_resource path="res://blocks/blocksLibraryLarge.meshlib" type="MeshLibrary" id=12]
+[ext_resource path="res://materials/darkGrayBlock.material" type="Material" id=19]
+[ext_resource path="res://audio/success.wav" type="AudioStream" id=20]
+[ext_resource path="res://scripts/successPlayer.gd" type="Script" id=21]
+[ext_resource path="res://scripts/load.gd" type="Script" id=26]
+
+[sub_resource type="CubeMesh" id=1]
+size = Vector3( 100, 1, 100 )
+
+[sub_resource type="BoxShape" id=2]
+extents = Vector3( 50, 0.5, 50 )
+
+[node name="Spatial" type="Spatial"]
+script = ExtResource( 26 )
+level_path = "level_new"
+
+[node name="player" parent="." instance=ExtResource( 2 )]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0 )
+
+[node name="Floor1" type="MeshInstance" parent="."]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.501, 0 )
+mesh = SubResource( 1 )
+material/0 = ExtResource( 19 )
+
+[node name="StaticBody" type="StaticBody" parent="Floor1"]
+
+[node name="CollisionShape" type="CollisionShape" parent="Floor1/StaticBody"]
+shape = SubResource( 2 )
+
+[node name="GridMap" type="GridMap" parent="."]
+process_priority = 1
+mesh_library = ExtResource( 12 )
+use_in_baked_light = true
+cell_size = Vector3( 1, 1, 1 )
+data = {
+"cells": PoolIntArray( ${this.serializeCells()} )
+}
+__meta__ = {
+"_editor_clip_": 0,
+"_editor_floor_": Vector3( 10, 0, 0 )
+}
+
+[node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="."]
+stream = ExtResource( 20 )
+script = ExtResource( 21 )
+
+[node name="Panels" type="Node" parent="."]
+`
+			}
+			let state;
+
+			let camera, scene, raycaster, renderer;
+			let sky, sun;
+			let controls;
+
+			let gridmapPlane, gridmapPlaceholderCube, gridmapMaterialId;
+
+			let transformControl, transformControl2;
+			let panelGroup;
+
+			let INTERSECTED;
+			let theta = 0;
+
+			const pointer = new THREE.Vector2();
+			const radius = 5;
+
+			init();
+
+			function init() {
+				state = new State();
+
+				renderer = new THREE.WebGLRenderer( { antialias: true } );
+				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+				camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.1, 100 );
+				camera.position.set(5, 5, 5);
+				camera.rotation.set(Math.PI/4, Math.PI/4, Math.PI/4);
+
+				scene = new THREE.Scene();
+				scene.background = new THREE.Color( 0xf0f0f0 );
+
+				sky = new Sky();
+				sky.scale.setScalar( 450000 );
+				scene.add( sky );
+				sun = new THREE.Vector3();
+				const phi = THREE.MathUtils.degToRad( 0 );
+				const theta = THREE.MathUtils.degToRad( 180 );
+				sun.setFromSphericalCoords( 1, phi, theta );
+				sky.material.uniforms[ 'sunPosition' ].value.copy( sun );
+				sky.material.uniforms[ 'turbidity' ].value = 0.1;
+				sky.material.uniforms[ 'rayleigh' ].value = 0.01;
+				const pmremGenerator = new THREE.PMREMGenerator( renderer );
+				scene.environment = pmremGenerator.fromScene( scene, 0.04 ).texture;
+				pmremGenerator.dispose();
+				sky.material.uniforms[ 'turbidity' ].value = 0.5;
+				sky.material.uniforms[ 'rayleigh' ].value = 0.1;
+
+				const ambientLight = new THREE.AmbientLight( 0xA0A0A0, 3 );
+				scene.add( ambientLight );
+				const directionalLight = new THREE.DirectionalLight( 0xA0A0A0, 3 );
+				directionalLight.position.set( 0.5, 1, 0.5 ).normalize();
+				scene.add( directionalLight );
+
+				const axesHelper1 = new THREE.AxesHelper( 100 );
+				axesHelper1.renderOrder = 3;
+				scene.add( axesHelper1 );
+				const axesHelper2 = new THREE.AxesHelper( -100 );
+				axesHelper2.renderOrder = 3;
+				scene.add( axesHelper2 );
+
+				for (const [key, value] of materials) {
+					value.material = new THREE.MeshStandardMaterial( { color: value.albedo, roughness: value.roughness, opacity: value.alpha, transparent: value.alpha < 1 } );
+				}
+
+				const geometry = new THREE.BoxGeometry( 1, 1, 1 );
+				gridmapMaterialId = -1;
+				gridmapPlaceholderCube = new THREE.Mesh( geometry, materials.get("4").material );
+				gridmapPlaceholderCube.position.set(1.5, 0.5, 0.5);
+				gridmapPlaceholderCube.renderOrder = 4;
+				scene.add( gridmapPlaceholderCube);
+				const gridHelper = new THREE.GridHelper( 10, 10 );
+				gridHelper.position.y = 0;
+				gridHelper.renderOrder = 1;
+				scene.add( gridHelper );
+
+				const planegeometry2 = new THREE.PlaneGeometry( 10, 10 );
+				gridmapPlane = new THREE.Mesh( planegeometry2, new THREE.MeshStandardMaterial( {color: 0xffff00, side: THREE.DoubleSide} ) );
+				gridmapPlane.layers.set(1);
+				gridmapPlane.rotation.x = -Math.PI/2;
+				gridmapPlane.position.y = 0;
+				gridmapPlane.visible = false;
+				scene.add( gridmapPlane );
+				const gridHelper2 = new THREE.GridHelper( 10, 10, "orange", "orange" );
+				gridHelper2.rotation.x = Math.PI/2;
+				gridHelper2.renderOrder = 2;
+				gridmapPlane.add( gridHelper2 );
+
+				const planegeometry = new THREE.PlaneGeometry( 10, 10 );
+				const planematerial = new THREE.MeshStandardMaterial( materials.get("14").material );
+				const plane = new THREE.Mesh( planegeometry, planematerial );
+				plane.rotation.x = -Math.PI/2;
+				plane.position.y = -0.001;
+				scene.add( plane );
+
+				const panelGeometry = new THREE.PlaneGeometry( 1, 1);				
+				const offscreen = new OffscreenCanvas(256, 256);
+				const ctx = offscreen.getContext("2d");
+				ctx.font = "48px serif";
+				ctx.fillStyle = "white";
+				ctx.textAlign = "center";
+				ctx.fillText("HI", 128, 128);
+				const panelMaterial = new THREE.MeshBasicMaterial({side: THREE.DoubleSide});
+				panelMaterial.map = new THREE.CanvasTexture(offscreen);
+				const panelMesh = new THREE.Mesh( panelGeometry, panelMaterial );
+				panelMesh.position.set(0, 0.5, 0.501);
+				panelMesh.scale.set(0.9, 0.9, 0.9);
+				panelGroup = new THREE.Group()
+				panelGroup.position.set(0.5, 0.5, 0.5);
+				panelGroup.add(panelMesh);
+				scene.add(panelGroup);
+
+				// const geometry = new THREE.BoxGeometry();
+
+				// for ( let i = 0; i < 2000; i ++ ) {
+
+				// 	const object = new THREE.Mesh( geometry, new THREE.MeshLambertMaterial( { color: Math.random() * 0xffffff } ) );
+
+				// 	object.position.x = Math.random() * 40 - 20;
+				// 	object.position.y = Math.random() * 40 - 20;
+				// 	object.position.z = Math.random() * 40 - 20;
+
+				// 	object.rotation.x = Math.random() * 2 * Math.PI;
+				// 	object.rotation.y = Math.random() * 2 * Math.PI;
+				// 	object.rotation.z = Math.random() * 2 * Math.PI;
+
+				// 	object.scale.x = Math.random() + 0.5;
+				// 	object.scale.y = Math.random() + 0.5;
+				// 	object.scale.z = Math.random() + 0.5;
+
+				// 	scene.add( object );
+
+				// }
+
+				raycaster = new THREE.Raycaster();
+
+				document.body.appendChild( renderer.domElement );
+
+				controls = new OrbitControls( camera, renderer.domElement );
+				controls.update();
+				controls.addEventListener("change", function(e) { render() });
+
+				transformControl = new TransformControls( camera, renderer.domElement );
+				transformControl.addEventListener( 'change', function(e) { render() } );
+				transformControl.addEventListener( 'dragging-changed', function ( event ) {
+					controls.enabled = ! event.value;
+				} );
+				transformControl.setTranslationSnap(1);
+				transformControl.size = 1;
+				transformControl.showX = false;
+				transformControl.showZ = false;
+				transformControl.setRotationSnap(Math.PI / 2.0);
+				transformControl.setMode( 'rotate' );
+				scene.add( transformControl );
+				transformControl2 = new TransformControls( camera, renderer.domElement );
+				transformControl2.addEventListener( 'change', function(e) { render() } );
+				transformControl2.addEventListener( 'dragging-changed', function ( event ) {
+					controls.enabled = ! event.value;
+				} );
+				transformControl2.setTranslationSnap(0.5);
+				transformControl2.size = 0.5;
+				scene.add( transformControl2 );
+
+				document.addEventListener( 'contextmenu', onContextMenu, false );
+				document.addEventListener( 'pointermove', onPointerMove );
+				document.addEventListener( 'pointerdown', onPointerDown );
+				document.addEventListener( 'pointerup', onPointerUp );
+				document.addEventListener( 'keydown', onDocumentKeyDown );
+				document.addEventListener( 'keyup', onDocumentKeyUp );
+
+				window.addEventListener( 'resize', onWindowResize );
+
+				var materialsElement = document.querySelector(".materials");
+				for (const [key, value] of materials) {
+					var materialElement = document.createElement("div");
+					materialElement.classList.add("material");
+					materialElement.style.backgroundColor = value.albedo + Math.floor(value.alpha*255).toString(16).padStart(2, '0');
+					materialElement.id = `material_${key}`;
+					materialElement.addEventListener("click", function(e) {
+						gridmapMaterialId = parseInt(key, 10);
+						gridmapPlaceholderCube.material = value.material;
+						controls.enableRotate = false;
+						controls.enablePan = false;
+						transformControl.detach();
+						transformControl2.detach();
+						gridmapPlane.visible = true;
+						render();
+					})
+					materialsElement.appendChild(materialElement);
+				}
+
+				document.getElementById("download").addEventListener("click", function(e) {
+					const file = new Blob([state.serialize()], {
+						type: 'text/plain'
+					});
+					const element = document.createElement('a');
+					element.href = URL.createObjectURL(file);
+					element.download = 'level.tscn';
+					element.click();
+				});
+
+				render();
+			}
+
+			function onWindowResize() {
+
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+			}
+
+			function raycastGridmapCoordinates() {
+				raycaster.setFromCamera( pointer, camera );
+				raycaster.layers.set( 1 ); 
+				const intersection = raycaster.intersectObject(gridmapPlane);
+				if (intersection.length > 0) {
+					let point = intersection[0].point.clone().floor();
+					point.y = gridmapPlane.position.y;
+					return point;
+				}
+				return null;
+			}
+
+			function maybeAddToGridmap(point, event) {
+				if (gridmapMaterialId == -1) {
+					return;
+				}
+				const key = Cell.key(...point.toArray());
+				var existing = state.cells.get(key);
+				if (existing && (event.buttons & 2 || ((event.buttons & 1 ) && existing.item != gridmapMaterialId))) {
+					existing.cube.removeFromParent();
+					state.cells.delete(key);
+					existing = null;
+				}
+				if (event.buttons & 1 && !existing) {
+					const cube = gridmapPlaceholderCube.clone()
+					cube.renderOrder = 0;
+					scene.add(cube);
+					state.cells.set(key, new Cell(...point.toArray(), gridmapMaterialId, cube));
+				}
+			}
+
+			function onPointerMove( event ) {
+				pointer.set( ( event.clientX / window.innerWidth ) * 2 - 1, - ( event.clientY / window.innerHeight ) * 2 + 1 );
+				const point = raycastGridmapCoordinates();
+				if (point && gridmapMaterialId != -1) {
+					gridmapPlaceholderCube.visible = true;
+					gridmapPlaceholderCube.position.copy(point).addScalar(0.5);
+					maybeAddToGridmap(point, event);
+				} else {
+					gridmapPlaceholderCube.visible = false;
+				}
+				render();
+			}
+
+			function onPointerUp( event ) {
+			}
+
+			function onPointerDown( event ) {
+				pointer.set( ( event.clientX / window.innerWidth ) * 2 - 1, - ( event.clientY / window.innerHeight ) * 2 + 1 );
+				if (gridmapMaterialId != -1) {
+					const point = raycastGridmapCoordinates();
+					if (point) {
+						maybeAddToGridmap(point, event);
+					}
+				} else {
+					raycaster.setFromCamera( pointer, camera );
+					raycaster.layers.set( 0 );
+					const intersection = raycaster.intersectObjects([panelGroup]);
+					if (intersection.length > 0) {
+						transformControl.attach(panelGroup);
+						transformControl2.attach(panelGroup);
+					}
+				}
+
+				render();
+				event.preventDefault();
+			}
+
+			function onContextMenu( event ) {
+				event.preventDefault();
+			}
+
+			function onDocumentKeyDown( event ) {
+				if (gridmapPlane.visible && event.code == "KeyQ" && !event.repeat) {
+					gridmapPlane.position.y -= 1;
+					render();
+				} else if (gridmapPlane.visible && event.code == "KeyE" && !event.repeat) {
+					gridmapPlane.position.y += 1;
+					render();
+				} else if (event.code == "Escape" && !event.repeat) {
+					controls.enableRotate = true;
+					controls.enablePan = true;
+					gridmapMaterialId = -1;
+					gridmapPlaceholderCube.visible = false;
+					transformControl.detach();
+					transformControl2.detach();
+					gridmapPlane.visible = false;
+					render();
+				}
+			}
+
+			function onDocumentKeyUp( event ) {
+			}
+
+			function render() {
+				renderer.render( scene, camera );
+			}
+
+		</script>
+		<div class="overlay-left">
+			<button id="download">Download Tscn</button>
+		</div>
+		<div class="overlay-right">
+			<ul>
+				<li>Escape: deselect</li>
+				<li>Q: floor up</li>
+				<li>E: floor down</li>
+				<li>Left click: place block / rotate camera</li>
+				<li>Right click: remove block / pan camera</li>
+				<li>Mouse wheel: zoom camera</li>
+			</ul>
+			<div class="materials"></div>
+		</div>
+	</body>
+</html>
