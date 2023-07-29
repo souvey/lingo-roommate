@@ -271,7 +271,7 @@ script = ExtResource( 21 )
 			let gridmapPlane, gridmapPlaceholderCube, gridmapMaterialId;
 
 			let transformControl, transformControl2;
-			let panelGroup;
+			let panels;
 
 			let INTERSECTED;
 			let theta = 0;
@@ -358,22 +358,12 @@ script = ExtResource( 21 )
 				plane.position.y = -0.001;
 				scene.add( plane );
 
-				const panelGeometry = new THREE.PlaneGeometry( 1, 1);				
-				const offscreen = new OffscreenCanvas(256, 256);
-				const ctx = offscreen.getContext("2d");
-				ctx.font = "48px serif";
-				ctx.fillStyle = "white";
-				ctx.textAlign = "center";
-				ctx.fillText("HI", 128, 128);
-				const panelMaterial = new THREE.MeshBasicMaterial({side: THREE.DoubleSide});
-				panelMaterial.map = new THREE.CanvasTexture(offscreen);
-				const panelMesh = new THREE.Mesh( panelGeometry, panelMaterial );
-				panelMesh.position.set(0, 0, 0.501);
-				panelMesh.scale.set(0.9, 0.9, 0.9);
-				panelGroup = new THREE.Group()
-				panelGroup.position.set(0.5, 0.5, 0.5);
-				panelGroup.add(panelMesh);
-				scene.add(panelGroup);
+                panels = new THREE.Group();
+                scene.add(panels);
+
+				panels.add(createPanel());
+                panels.add(createPanel());
+                panels.add(createPanel());
 
 				// const geometry = new THREE.BoxGeometry();
 
@@ -483,6 +473,25 @@ script = ExtResource( 21 )
 				render();
 			}
 
+            function createPanel() {
+                const panelGeometry = new THREE.PlaneGeometry( 1, 1);				
+				const offscreen = new OffscreenCanvas(256, 256);
+				const ctx = offscreen.getContext("2d");
+				ctx.font = "48px serif";
+				ctx.fillStyle = "white";
+				ctx.textAlign = "center";
+				ctx.fillText("HI", 128, 128);
+				const panelMaterial = new THREE.MeshBasicMaterial({side: THREE.DoubleSide});
+				panelMaterial.map = new THREE.CanvasTexture(offscreen);
+				const panelMesh = new THREE.Mesh( panelGeometry, panelMaterial );
+				panelMesh.position.set(0, 0, 0.501);
+				panelMesh.scale.set(0.9, 0.9, 0.9);
+				const panelGroup = new THREE.Group()
+				panelGroup.position.set(0.5, 0.5, 0.5);
+				panelGroup.add(panelMesh);
+                return panelGroup;
+            }
+
 			function onWindowResize() {
 
 				camera.aspect = window.innerWidth / window.innerHeight;
@@ -546,14 +555,14 @@ script = ExtResource( 21 )
 					if (point) {
 						maybeAddToGridmap(point, event);
 					}
-				} else {
+				} else if (!transformControl.dragging && !transformControl2.dragging) {
 					raycaster.setFromCamera( pointer, camera );
 					raycaster.layers.set( 0 );
-					const intersection = raycaster.intersectObjects([panelGroup]);
+					const intersection = raycaster.intersectObjects(panels.children);
 					if (intersection.length > 0) {
-						transformControl.attach(panelGroup);
-						transformControl2.attach(panelGroup);
-					} else if (!transformControl.dragging && !transformControl2.dragging) {
+						transformControl.attach(intersection[0].object.parent);
+						transformControl2.attach(intersection[0].object.parent);
+					} else {
                         transformControl.detach();
 					    transformControl2.detach();
                     }
