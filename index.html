@@ -571,7 +571,7 @@ script = ExtResource( 21 )
 					raycaster.layers.set( 0 );
 					const intersection = raycaster.intersectObjects(panels.children);
 					if (intersection.length > 0) {
-                        if (inspectorPane != null) {
+                        if (inspectorPane) {
                             inspectorPane.dispose();
                         }
 						transformControl.attach(intersection[0].object.parent);
@@ -585,8 +585,10 @@ script = ExtResource( 21 )
 					} else {
                         transformControl.detach();
 					    transformControl2.detach();
-                        inspectorPane.dispose();
-                        inspectorPane = null;
+                        if (inspectorPane) {
+                            inspectorPane.dispose();
+                            inspectorPane = null;
+                        }
                     }
 				}
 
@@ -612,8 +614,10 @@ script = ExtResource( 21 )
 					transformControl.detach();
 					transformControl2.detach();
 					gridmapPlane.visible = false;
-                    inspectorPane.dispose();
-                    inspectorPane = null;
+                    if (inspectorPane) {
+                        inspectorPane.dispose();
+                        inspectorPane = null;
+                    }
 					render();
 				}
 			}
