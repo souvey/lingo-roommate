@@ -211,9 +211,29 @@
 				return out;
 			}
 
-			State.prototype.serialize = function () {
-				return `[gd_scene load_steps=9 format=2]
+            State.prototype.serializeMatrix = function(matrix) {
+                const matrix2 = matrix.clone().multiply(matrix.makeRotationY(Math.PI));
+                const el = matrix2.elements;
+                return [el[0], el[1], el[2], el[4], el[5], el[6], el[8], el[9], el[10], el[12], el[13], el[14]];
+            }
 
+            State.prototype.serializePanels = function() {
+                var out = ""
+                for (const panel of panels.children) {
+                    out += `
+[node name="Panel_${panel.id}" parent="Panels/Room" instance=ExtResource( 1 )]
+text = "${panel.userData.text}"
+answer = "${panel.userData.answer}"
+transform = Transform( ${this.serializeMatrix(panel.children[0].matrixWorld) } )
+`
+                }
+                return out;
+            }
+
+			State.prototype.serialize = function () {
+				return `[gd_scene load_steps=10 format=2]
+
+[ext_resource path="res://nodes/panel_1.tscn" type="PackedScene" id=1]
 [ext_resource path="res://nodes/player.tscn" type="PackedScene" id=2]
 [ext_resource path="res://blocks/blocksLibraryLarge.meshlib" type="MeshLibrary" id=12]
 [ext_resource path="res://materials/darkGrayBlock.material" type="Material" id=19]
@@ -262,6 +282,9 @@ stream = ExtResource( 20 )
 script = ExtResource( 21 )
 
 [node name="Panels" type="Node" parent="."]
+
+[node name="Room" type="Node" parent="Panels"]
+${this.serializePanels()}
 `
 			}
 			let state;
