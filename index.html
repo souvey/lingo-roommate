@@ -334,24 +334,24 @@ script = ExtResource( 21 )
 				gridmapPlaceholderCube.position.set(1.5, 0.5, 0.5);
 				gridmapPlaceholderCube.renderOrder = 4;
 				scene.add( gridmapPlaceholderCube);
-				const gridHelper = new THREE.GridHelper( 10, 10 );
+				const gridHelper = new THREE.GridHelper( 20, 20 );
 				gridHelper.position.y = 0;
 				gridHelper.renderOrder = 1;
 				scene.add( gridHelper );
 
-				const planegeometry2 = new THREE.PlaneGeometry( 10, 10 );
+				const planegeometry2 = new THREE.PlaneGeometry( 20, 20 );
 				gridmapPlane = new THREE.Mesh( planegeometry2, new THREE.MeshStandardMaterial( {color: 0xffff00, side: THREE.DoubleSide} ) );
 				gridmapPlane.layers.set(1);
 				gridmapPlane.rotation.x = -Math.PI/2;
 				gridmapPlane.position.y = 0;
 				gridmapPlane.visible = false;
 				scene.add( gridmapPlane );
-				const gridHelper2 = new THREE.GridHelper( 10, 10, "orange", "orange" );
+				const gridHelper2 = new THREE.GridHelper( 20, 20, "orange", "orange" );
 				gridHelper2.rotation.x = Math.PI/2;
 				gridHelper2.renderOrder = 2;
 				gridmapPlane.add( gridHelper2 );
 
-				const planegeometry = new THREE.PlaneGeometry( 10, 10 );
+				const planegeometry = new THREE.PlaneGeometry( 20, 20 );
 				const planematerial = new THREE.MeshStandardMaterial( materials.get("14").material );
 				const plane = new THREE.Mesh( planegeometry, planematerial );
 				plane.rotation.x = -Math.PI/2;
