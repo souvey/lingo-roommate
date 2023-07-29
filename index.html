@@ -606,7 +606,8 @@ script = ExtResource( 21 )
 				} else if (gridmapPlane.visible && event.code == "KeyE" && !event.repeat) {
 					gridmapPlane.position.y += 1;
 					render();
-				} else if (event.code == "Escape" && !event.repeat) {
+				} else if ((event.code == "Escape" || event.code == "Delete") && !event.repeat) {
+                    const selected = transformControl.object;
 					controls.enableRotate = true;
 					controls.enablePan = true;
 					gridmapMaterialId = -1;
@@ -617,6 +618,9 @@ script = ExtResource( 21 )
                     if (inspectorPane) {
                         inspectorPane.dispose();
                         inspectorPane = null;
+                    }
+                    if (event.code == "Delete" && selected) {
+                        selected.removeFromParent();
                     }
 					render();
 				}
