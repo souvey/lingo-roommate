@@ -296,6 +296,7 @@ ${this.serializePanels()}
 
 			let transformControl, transformControl2;
 			let panels;
+            let selectedBox;
 
             let inspectorPane;
 
@@ -353,6 +354,10 @@ ${this.serializePanels()}
 				for (const [key, value] of materials) {
 					value.material = new THREE.MeshStandardMaterial( { color: value.albedo, roughness: value.roughness, opacity: value.alpha, transparent: value.alpha < 1 } );
 				}
+
+                selectedBox = new THREE.BoxHelper(undefined, 0xffff00 );
+                selectedBox.visible = false;
+                scene.add(selectedBox);
 
 				const geometry = new THREE.BoxGeometry( 1, 1, 1 );
 				gridmapMaterialId = -1;
@@ -611,6 +616,7 @@ ${this.serializePanels()}
 					} else {
                         transformControl.detach();
 					    transformControl2.detach();
+                        selectedBox.visible = false;
                         if (inspectorPane) {
                             inspectorPane.dispose();
                             inspectorPane = null;
@@ -627,6 +633,8 @@ ${this.serializePanels()}
                 }
                 transformControl.attach(panel);
                 transformControl2.attach(panel);
+                selectedBox.visible = true;
+                selectedBox.setFromObject(panel.children[0]);
                 inspectorPane = new Tweakpane.Pane({container: document.querySelector(".overlay-right"), title: 'Panel'});
                 inspectorPane.registerPlugin(TweakpaneEssentialsPlugin);
                 inspectorPane.addInput(panel, 'position', {
@@ -660,6 +668,7 @@ ${this.serializePanels()}
 					gridmapPlaceholderCube.visible = false;
 					transformControl.detach();
 					transformControl2.detach();
+                    selectedBox.visible = false;
 					gridmapPlane.visible = false;
                     if (inspectorPane) {
                         inspectorPane.dispose();
@@ -684,6 +693,7 @@ ${this.serializePanels()}
                 if (inspectorPane != null) {
                     inspectorPane.refresh();
                 }
+                selectedBox.update();
 				renderer.render( scene, camera );
 			}
 
