@@ -597,6 +597,13 @@ ${serializePanels()}
                     ctx.fillText(panel.userData.text.toUpperCase(), 140, panel.userData.reverse ? 136 : 50);
                     ctx.fillStyle = "black";
                     ctx.fillText(panel.userData.answer.toUpperCase(), 140, panel.userData.reverse ? 50 : 136);
+                    if (panel.userData.behindCountdown) {
+                        ctx.font = "98px Lingo"
+                        ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+                        ctx.fillRect(0, 0, 280, 180);
+                        ctx.fillStyle = "white";
+                        ctx.fillText("999", 140, 90);
+                    }
                 } else {
                     ctx.fillText(panel.userData.text.toUpperCase(), 140, 90);
                 }
@@ -782,7 +789,7 @@ ${serializePanels()}
                 }).on('change', function(e) { redrawPanel(panel) });
                 advancedPane.addInput(panel.userData, 'behindCountdown', {
                     label: 'behind countdown?',
-                });
+                }).on('change', function(e) { redrawPanel(panel) });
                 const updateVisibility = function() {
                     advancedPane.hidden = panel.userData.type != "panel";
                     answerInput.hidden = panel.userData.type != "panel";
