@@ -374,9 +374,11 @@ ${serializePanels()}
 
 				const axesHelper1 = new THREE.AxesHelper( 100 );
 				axesHelper1.renderOrder = 3;
+                axesHelper1.position.y = 0.001;
 				scene.add( axesHelper1 );
 				const axesHelper2 = new THREE.AxesHelper( -100 );
 				axesHelper2.renderOrder = 3;
+                axesHelper2.position.y = 0.001;
 				scene.add( axesHelper2 );
 
 				for (const [key, value] of materials) {
