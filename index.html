@@ -679,20 +679,29 @@ ${serializePanels()}
                 selectedBox.setFromObject(panel.children[0]);
                 inspectorPane = new Tweakpane.Pane({container: document.querySelector(".overlay-right"), title: 'Inspector'});
                 inspectorPane.registerPlugin(TweakpaneEssentialsPlugin);
-                inspectorPane.addInput(panel, 'position', {
+                const transformPane = inspectorPane.addFolder({
+                    title: 'Transform',
+                });
+                transformPane.addInput(panel, 'position', {
                     groupName: 'position'
                 });
-                const typeInput = inspectorPane.addInput(panel.userData, 'type', {
+                transformPane.addInput(panel, 'scale', {
+                    groupName: 'scale'
+                });
+                const basicsPane = inspectorPane.addFolder({
+                    title: 'Basics',
+                });
+                const typeInput = basicsPane.addInput(panel.userData, 'type', {
                     options: {
                         "Panel": "panel",
                         "Sign Panel": "signPanel",
                         "Sign": "sign",
                     },
                 });
-                inspectorPane.addInput(panel.userData, 'text', {
+                basicsPane.addInput(panel.userData, 'text', {
                     groupName: 'text',
                 }).on('change', function(e) { redrawPanel(panel) });
-                const answerInput = inspectorPane.addInput(panel.userData, 'answer', {
+                const answerInput = basicsPane.addInput(panel.userData, 'answer', {
                     groupName: 'answer',
                 })
                 answerInput.on('change', function(e) { redrawPanel(panel) });
@@ -700,7 +709,7 @@ ${serializePanels()}
                     answerInput.hidden = panel.userData.type != "panel";
                 }
                 typeInput.on('change', function(e) { updateVisibility(); redrawPanel(panel) });
-                inspectorPane.on('change', function(e) { render() });
+                inspectorPane.on('change', function(e) { panel.updateMatrixWorld(true); render() });
                 updateVisibility();          
             }
 
