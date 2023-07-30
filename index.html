@@ -218,14 +218,14 @@
                             parent = "Panels/PostCountdown"
                             transform = panel.matrixWorld.clone().setPosition(-9999,-9999,-9999);
                             out += `
-[node name="CountdownPanel_${panel.id}" parent="Decorations" instance=ExtResource( 5 )]
+[node name="CountdownPanel_${panel.name}" parent="Decorations" instance=ExtResource( 5 )]
 transform = Transform( ${serializeMatrix(panel.matrixWorld) } )
-replace_with = NodePath("../../Panels/PostCountdown/Panel_${panel.id}")
+replace_with = NodePath("../../Panels/PostCountdown/Panel_${panel.name}")
 panels = NodePath("../../Panels/Room")
 `
                         }
                         out += `
-[node name="Panel_${panel.id}" parent="${parent}" instance=ExtResource( ${panel.userData.reverse ? 6 : 1 } )]
+[node name="Panel_${panel.name}" parent="${parent}" instance=ExtResource( ${panel.userData.reverse ? 6 : 1 } )]
 text = ${JSON.stringify(panel.userData.text)}
 answer = ${JSON.stringify(panel.userData.answer)}
 placeholder_override = ${JSON.stringify(panel.userData.placeholderOverride)}
@@ -234,13 +234,13 @@ transform = Transform( ${serializeMatrix(transform) } )
 `
                     } else if (panel.userData.type == "signPanel") {
                         out += `
-[node name="PanelSign_${panel.id}" parent="Decorations" instance=ExtResource( 3 )]
+[node name="PanelSign_${panel.name}" parent="Decorations" instance=ExtResource( 3 )]
 value = ${JSON.stringify(panel.userData.text)}
 transform = Transform( ${serializeMatrix(panel.matrixWorld) } )
 `
                     } else if (panel.userData.type == "sign") {
                         out += `
-[node name="Sign_${panel.id}" parent="Decorations" instance=ExtResource( 4 )]
+[node name="Sign_${panel.name}" parent="Decorations" instance=ExtResource( 4 )]
 value = ${JSON.stringify(panel.userData.text)}"
 transform = Transform( ${serializeMatrix(panel.matrixWorld) } )
 `
@@ -253,7 +253,7 @@ transform = Transform( ${serializeMatrix(panel.matrixWorld) } )
                 var out = "";
                 for (const gridmap of gridmaps.children) {
                     out += `
-[node name="GridMap_${gridmap.id}" type="GridMap" parent="."]
+[node name="GridMap_${gridmap.name}" type="GridMap" parent="."]
 transform = Transform( ${serializeMatrix(gridmap.matrixWorld) } )
 process_priority = 1
 mesh_library = ExtResource( 12 )
@@ -411,10 +411,10 @@ ${serializePanels()}
                 gridmaps = new THREE.Group();
                 scene.add(gridmaps);
                 const gridmapFull = createGridmap(1);
-                gridmapFull.name = "Gridmap Full";
+                gridmapFull.name = "Full";
                 gridmaps.add(gridmapFull);
                 const gridmapQuarter = createGridmap(0.5);
-                gridmapQuarter.name = "Gridmap Quarter";
+                gridmapQuarter.name = "Quarter";
                 gridmaps.add(gridmapQuarter);
 
                 const controlPane = new Tweakpane.Pane({container: document.querySelector(".overlay-left"), title: 'Controls'});
@@ -432,13 +432,113 @@ ${serializePanels()}
                     render();
                 });
                 controlPane.addSeparator();
+                var PARAMS = {
+                    name: "level_new",
+                }
+                controlPane.addInput(PARAMS, 'name', {
+                    label: 'name'
+                });
+                controlPane.addButton({title:"Save"}).on("click", function(e) {
+                    var saved = {
+                        version: 1,
+                        name: PARAMS.name,
+                        panels: [],
+                        fullCells: [],
+                        quarterCells: [],
+                    };
+                    for (const panel of panels.children) {
+                        let {canvasCtx: _, ...userData} = panel.userData;
+                        saved.panels.push({
+                            name: panel.name,
+                            userData: userData,
+                            position: panel.position.toArray(),
+                            rotation: panel.rotation.toArray(),
+                            scale: panel.scale.toArray(),
+                        });
+                    }
+                    for (const cell of gridmaps.getObjectByName("Full").getObjectByName("cells").children) {
+                        saved.fullCells.push({
+                            position: cell.position.toArray(),
+                            item: cell.material.userData.item,
+                        });
+                    }
+                    for (const cell of gridmaps.getObjectByName("Quarter").getObjectByName("cells").children) {
+                        saved.quarterCells.push({
+                            position: cell.position.toArray(),
+                            item: cell.material.userData.item,
+                        });
+                    }
+					const file = new Blob([JSON.stringify(saved)], {
+						type: 'text/plain'
+					});
+					const element = document.createElement('a');
+					element.href = URL.createObjectURL(file);
+					element.download = PARAMS.name + '.json';
+					element.click();
+                });
+                controlPane.addButton({title:"Load"}).on("click", function(e) {
+                    var input = document.createElement('input');
+                    input.type = 'file';
+                    input.accept = '.json';
+                    input.onchange = e => { 
+                        var file = e.target.files[0]; 
+                        var reader = new FileReader();
+                        reader.readAsText(file,'UTF-8');
+                        reader.onload = readerEvent => {
+                            var content = readerEvent.target.result;
+                            var saved = JSON.parse(content);
+                            PARAMS.name = saved.name;
+                            controlPane.refresh();
+                            deselectAll();
+                            panels.clear();
+                            for (const panel of saved.panels) {
+                                const obj = createPanel();
+                                const ctx = obj.userData.canvasCtx;
+                                obj.userData = Object.assign({}, panel.userData);
+                                obj.userData.canvasCtx = ctx;
+                                obj.position.fromArray(panel.position);
+                                obj.rotation.fromArray(panel.rotation);
+                                obj.scale.fromArray(panel.scale);
+                                redrawPanel(obj);
+                                panels.add(obj);
+                            }
+                            const gridmapFull = gridmaps.getObjectByName("Full").getObjectByName("cells");
+                            console.log(gridmapFull.toJSON());
+                            const gridmapFullPrototype = gridmaps.getObjectByName("Full").getObjectByName("placeholder");
+                            gridmapFull.clear();
+                            for (const cell of saved.fullCells) {
+                                const obj = gridmapFullPrototype.clone();
+                                obj.name = "";
+                                obj.renderOrder = 0;
+                                obj.material = materials.get(cell.item.toString()).material;
+                                obj.position.fromArray(cell.position);
+                                obj.visible = true;
+                                gridmapFull.add(obj);
+                            }
+                            const gridmapQuarter = gridmaps.getObjectByName("Quarter").getObjectByName("cells");
+                            const gridmapQuarterPrototype = gridmaps.getObjectByName("Quarter").getObjectByName("placeholder");
+                            gridmapQuarter.clear();
+                            for (const cell of saved.quarterCells) {
+                                const obj = gridmapQuarterPrototype.clone();
+                                obj.name = "";
+                                obj.renderOrder = 0;
+                                obj.material = materials.get(cell.item.toString()).material;
+                                obj.position.fromArray(cell.position);
+                                obj.visible = true;
+                                gridmapQuarter.add(obj);
+                            }
+                            render();                            
+                        }
+                    }
+                    input.click();
+                });
                 controlPane.addButton({title:"Export to Lingo TSCN"}).on("click", function(e) {
 					const file = new Blob([serializeScene()], {
 						type: 'text/plain'
 					});
 					const element = document.createElement('a');
 					element.href = URL.createObjectURL(file);
-					element.download = 'level.tscn';
+					element.download = PARAMS.name + '.tscn';
 					element.click();
                 });
                 const helpFolder = controlPane.addFolder({
@@ -637,6 +737,7 @@ ${serializePanels()}
                     reverse: false,
                     canvasCtx: ctx,
                 };
+                panel.name = `P${panel.id}`;
                 redrawPanel(panel);
                 return panel;
             }
@@ -681,6 +782,7 @@ ${serializePanels()}
 				}
 				if (event.buttons & 1 && !existing) {
 					const cube = placeholder.clone()
+                    cube.name = "";
 					cube.renderOrder = 0;
 					cells.add(cube);
 				}
