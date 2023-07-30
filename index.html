@@ -5,6 +5,10 @@
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 		<style>
+            @font-face {
+                font-family: Lingo;
+                src: url("Lingo.ttf");
+            }
 			body {
 				margin: 0;
 				overscroll-behavior: none;
@@ -364,6 +368,7 @@ ${this.serializePanels()}
 				gridmapPlaceholderCube = new THREE.Mesh( geometry, materials.get("4").material );
 				gridmapPlaceholderCube.position.set(1.5, 0.5, 0.5);
 				gridmapPlaceholderCube.renderOrder = 4;
+                gridmapPlaceholderCube.visible = false;
 				scene.add( gridmapPlaceholderCube);
 				const gridHelper = new THREE.GridHelper( 20, 20 );
 				gridHelper.position.y = 0;
@@ -513,19 +518,23 @@ ${this.serializePanels()}
 
             function redrawPanel(panel) {
                 const ctx = panel.userData.canvasCtx;
-				ctx.font = "48px serif";
+                ctx.clearRect(0, 0, 280, 180);
+                ctx.fillStyle = "#09090A";
+                ctx.fillRect(0, 0, 280, 180);
+                ctx.fillStyle = "#0B0B0D";
+                ctx.fillRect(15, 100, 250, 68);
+				ctx.font = "32px Lingo";
 				ctx.fillStyle = "white";
 				ctx.textAlign = "center";
-                ctx.clearRect(0, 0, 256, 256);
-				ctx.fillText(panel.userData.text.toUpperCase(), 128, 96);
-				ctx.fillStyle = "#999";
-				ctx.fillText(panel.userData.answer.toUpperCase(), 128, 172);
+				ctx.fillText(panel.userData.text.toUpperCase(), 140, 60);
+				ctx.fillStyle = "black";
+				ctx.fillText(panel.userData.answer.toUpperCase(), 140, 140);
                 panel.children[0].material.map.needsUpdate = true;
             }
 
             function createPanel() {
                 const panelGeometry = new THREE.PlaneGeometry( 1, 1);				
-				const offscreen = new OffscreenCanvas(256, 256);
+				const offscreen = new OffscreenCanvas(280, 180);
 				const ctx = offscreen.getContext("2d");
 				const panelMaterial = new THREE.MeshBasicMaterial({side: THREE.DoubleSide});
 				panelMaterial.map = new THREE.CanvasTexture(offscreen);
@@ -699,6 +708,7 @@ ${this.serializePanels()}
 
 		</script>
 		<div class="overlay-left">
+            <div style="font-family: Lingo">Lingo</div>
 			<button id="download">Download Tscn</button>
 		</div>
 		<div class="overlay-right">
