@@ -202,13 +202,25 @@
                 var out = ""
                 for (const panel of panels.children) {
                     if (panel.userData.type == "panel") {
+                        var parent = "Panels/Room"
+                        var transform = panel.matrixWorld;
+                        if  (panel.userData.behindCountdown) {
+                            parent = "Panels/PostCountdown"
+                            transform = panel.matrixWorld.clone().setPosition(-9999,-9999,-9999);
+                            out += `
+[node name="CountdownPanel_${panel.id}" parent="Decorations" instance=ExtResource( 5 )]
+transform = Transform( ${serializeMatrix(panel.matrixWorld) } )
+replace_with = NodePath("../../Panels/PostCountdown/Panel_${panel.id}")
+panels = NodePath("../../Panels/Room")
+`
+                        }
                         out += `
-[node name="Panel_${panel.id}" parent="Panels/Room" instance=ExtResource( 1 )]
+[node name="Panel_${panel.id}" parent="${parent}" instance=ExtResource( 1 )]
 text = ${JSON.stringify(panel.userData.text)}
 answer = ${JSON.stringify(panel.userData.answer)}
 placeholder_override = ${JSON.stringify(panel.userData.placeholderOverride)}
 achieved_text = ${JSON.stringify(panel.userData.achievedText)}
-transform = Transform( ${serializeMatrix(panel.matrixWorld) } )
+transform = Transform( ${serializeMatrix(transform) } )
 `
                     } else if (panel.userData.type == "signPanel") {
                         out += `
@@ -252,6 +264,7 @@ data = {
 [ext_resource path="res://nodes/player.tscn" type="PackedScene" id=2]
 [ext_resource path="res://nodes/sign_panel_snappy.tscn" type="PackedScene" id=3]
 [ext_resource path="res://nodes/sign_snappy.tscn" type="PackedScene" id=4]
+[ext_resource path="res://nodes/panel_snappy_countdown_auto.tscn" type="PackedScene" id=5]
 [ext_resource path="res://blocks/blocksLibraryLarge.meshlib" type="MeshLibrary" id=12]
 [ext_resource path="res://materials/darkGrayBlock.material" type="Material" id=19]
 [ext_resource path="res://audio/success.wav" type="AudioStream" id=20]
@@ -290,6 +303,8 @@ script = ExtResource( 21 )
 [node name="Decorations" type="Node" parent="."]
 
 [node name="Panels" type="Node" parent="."]
+
+[node name="PostCountdown" type="Node" parent="Panels"]
 
 [node name="Room" type="Node" parent="Panels"]
 ${serializePanels()}
@@ -574,6 +589,7 @@ ${serializePanels()}
                     answer: "HI",
                     placeholderOverride: "",
                     achievedText: "",
+                    behindCountdown: false,
                     type: "panel",
                     canvasCtx: ctx,
                 };
@@ -687,10 +703,10 @@ ${serializePanels()}
                     title: 'Transform',
                 });
                 transformPane.addInput(panel, 'position', {
-                    groupName: 'position'
+                    label: 'position'
                 });
                 transformPane.addInput(panel, 'scale', {
-                    groupName: 'scale'
+                    label: 'scale'
                 });
                 const basicsPane = inspectorPane.addFolder({
                     title: 'Basics',
@@ -703,20 +719,23 @@ ${serializePanels()}
                     },
                 });
                 basicsPane.addInput(panel.userData, 'text', {
-                    groupName: 'text',
+                    label: 'text',
                 }).on('change', function(e) { redrawPanel(panel) });
                 const answerInput = basicsPane.addInput(panel.userData, 'answer', {
-                    groupName: 'answer',
+                    label: 'answer',
                 });
                 answerInput.on('change', function(e) { redrawPanel(panel) });
                 const advancedPane = inspectorPane.addFolder({
                     title: 'Panel Advanced',
                 }); 
                 advancedPane.addInput(panel.userData, 'achievedText', {
-                    groupName: 'achievement text',
+                    label: 'achievement text',
                 });
                 advancedPane.addInput(panel.userData, 'placeholderOverride', {
-                    groupName: 'placeholder override',
+                    label: 'placeholder override',
+                });
+                advancedPane.addInput(panel.userData, 'behindCountdown', {
+                    label: 'behind countdown?',
                 });
                 const updateVisibility = function() {
                     advancedPane.hidden = panel.userData.type != "panel";
