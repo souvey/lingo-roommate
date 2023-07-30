@@ -46,6 +46,9 @@
 				position: relative;
 				overflow: hidden;
 			}
+            .selected-material {
+                outline: 2px solid white;
+            }
 			.material::after {
 				content: '';
 				position: absolute;
@@ -955,7 +958,7 @@ ${serializePanels()}
                 materialsElement.classList.add("materials")
                 blocksFolder.element.appendChild(materialsElement);
 				for (const [key, value] of materials) {
-					var materialElement = document.createElement("div");
+					const materialElement = document.createElement("div");
 					materialElement.classList.add("material");
 					materialElement.style.backgroundColor = value.albedo + Math.floor(value.alpha*255).toString(16).padStart(2, '0');
 					materialElement.id = `material_${key}`;
@@ -964,12 +967,20 @@ ${serializePanels()}
                         if (selectedGridmap) {
 						    selectedGridmap.getObjectByName("placeholder").material = value.material;
                         }
+                        const existing = document.querySelector(".selected-material")
+                        if (existing) {
+                            existing.classList.remove("selected-material");
+                        }
+                        materialElement.classList.add("selected-material");
 					})
                     if (value.roughness < 1) {
                         var glossElement = document.createElement("div");
                         glossElement.classList.add("material-gloss");
                         glossElement.style.opacity = (1 - value.roughness);
                         materialElement.appendChild(glossElement);
+                    }
+                    if (gridmapMaterialId == parseInt(key, 10)) {
+                        materialElement.classList.add("selected-material");
                     }
                     tippy(materialElement, {
                         content: value.name,
