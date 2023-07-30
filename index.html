@@ -223,12 +223,26 @@
             State.prototype.serializePanels = function() {
                 var out = ""
                 for (const panel of panels.children) {
-                    out += `
+                    if (panel.userData.type == "panel") {
+                        out += `
 [node name="Panel_${panel.id}" parent="Panels/Room" instance=ExtResource( 1 )]
 text = "${panel.userData.text}"
 answer = "${panel.userData.answer}"
 transform = Transform( ${this.serializeMatrix(panel.matrixWorld) } )
 `
+                    } else if (panel.userData.type == "signPanel") {
+                        out += `
+[node name="PanelSign_${panel.id}" parent="Decorations" instance=ExtResource( 3 )]
+value = "${panel.userData.text}"
+transform = Transform( ${this.serializeMatrix(panel.matrixWorld) } )
+`
+                    } else if (panel.userData.type == "sign") {
+                        out += `
+[node name="Sign_${panel.id}" parent="Decorations" instance=ExtResource( 4 )]
+value = "${panel.userData.text}"
+transform = Transform( ${this.serializeMatrix(panel.matrixWorld) } )
+`
+                    }
                 }
                 return out;
             }
@@ -238,6 +252,8 @@ transform = Transform( ${this.serializeMatrix(panel.matrixWorld) } )
 
 [ext_resource path="res://nodes/panel_snappy.tscn" type="PackedScene" id=1]
 [ext_resource path="res://nodes/player.tscn" type="PackedScene" id=2]
+[ext_resource path="res://nodes/sign_panel_snappy.tscn" type="PackedScene" id=3]
+[ext_resource path="res://nodes/sign_snappy.tscn" type="PackedScene" id=4]
 [ext_resource path="res://blocks/blocksLibraryLarge.meshlib" type="MeshLibrary" id=12]
 [ext_resource path="res://materials/darkGrayBlock.material" type="Material" id=19]
 [ext_resource path="res://audio/success.wav" type="AudioStream" id=20]
@@ -284,6 +300,8 @@ __meta__ = {
 stream = ExtResource( 20 )
 script = ExtResource( 21 )
 
+[node name="Decorations" type="Node" parent="."]
+
 [node name="Panels" type="Node" parent="."]
 
 [node name="Room" type="Node" parent="Panels"]
@@ -322,6 +340,7 @@ ${this.serializePanels()}
 				camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.1, 100 );
 				camera.position.set(5, 5, 5);
 				camera.rotation.set(Math.PI/4, Math.PI/4, Math.PI/4);
+                camera.layers.enable(2);
 
 				scene = new THREE.Scene();
 				scene.background = new THREE.Color( 0xf0f0f0 );
@@ -361,6 +380,7 @@ ${this.serializePanels()}
 
                 selectedBox = new THREE.BoxHelper(undefined, 0xffff00 );
                 selectedBox.visible = false;
+                selectedBox.renderOrder = 3;
                 scene.add(selectedBox);
 
 				const geometry = new THREE.BoxGeometry( 1, 1, 1 );
@@ -518,18 +538,43 @@ ${this.serializePanels()}
 
             function redrawPanel(panel) {
                 const ctx = panel.userData.canvasCtx;
+                const type = panel.userData.type;
                 ctx.clearRect(0, 0, 280, 180);
-                ctx.fillStyle = "#09090A";
-                ctx.fillRect(0, 0, 280, 180);
-                ctx.fillStyle = "#0B0B0D";
-                ctx.fillRect(15, 100, 250, 68);
-				ctx.font = "32px Lingo";
+                if (type != "sign") {
+                    ctx.fillStyle = "#09090A";
+                    ctx.fillRect(0, 0, 280, 180);
+                }
+                if (type == "panel") {
+                    ctx.fillStyle = "#0B0B0D";
+                    ctx.fillRect(15, 100, 250, 68);
+                }
+                var size = 32;
+                if (type == "sign") {
+                    size = 135;
+                    if (panel.userData.text.length > 3) {
+                        size = 400 / panel.userData.text.length;
+                    }
+                } else if (panel.userData.text.length > 12) {
+                    size = 400 / panel.userData.text.length;
+                }
+                ctx.font = `${size}px Lingo`;
 				ctx.fillStyle = "white";
+                ctx.textBaseline = 'middle';
 				ctx.textAlign = "center";
-				ctx.fillText(panel.userData.text.toUpperCase(), 140, 60);
-				ctx.fillStyle = "black";
-				ctx.fillText(panel.userData.answer.toUpperCase(), 140, 142);
+                if (type == "panel") {
+                    ctx.fillText(panel.userData.text.toUpperCase(), 140, 56);
+                    ctx.fillStyle = "black";
+                    ctx.fillText(panel.userData.answer.toUpperCase(), 140, 136);
+                } else {
+                    ctx.fillText(panel.userData.text.toUpperCase(), 140, 90);
+                }
+                if (type == "sign") {
+                    ctx.lineWidth = 2;
+                    ctx.fillStyle = "black";
+                    ctx.strokeText(panel.userData.text.toUpperCase(), 140, 90);
+                }
                 panel.children[0].material.map.needsUpdate = true;
+                panel.children[0].material.transparent = (type == "sign");
             }
 
             function createPanel() {
@@ -544,9 +589,13 @@ ${this.serializePanels()}
 				const panel = new THREE.Group()
 				panel.position.set(0.5, 0.5, 0.5);
 				panel.add(panelMesh);
+                const box = new THREE.BoxHelper(panelMesh, 0xcccccc);
+                box.layers.set(2);
+                panel.add(box);
                 panel.userData = {
                     text: "HI",
                     answer: "HI",
+                    type: "panel",
                     canvasCtx: ctx,
                 };
                 redrawPanel(panel);
@@ -644,18 +693,31 @@ ${this.serializePanels()}
                 transformControl2.attach(panel);
                 selectedBox.visible = true;
                 selectedBox.setFromObject(panel.children[0]);
-                inspectorPane = new Tweakpane.Pane({container: document.querySelector(".overlay-right"), title: 'Panel'});
+                inspectorPane = new Tweakpane.Pane({container: document.querySelector(".overlay-right"), title: 'Inspector'});
                 inspectorPane.registerPlugin(TweakpaneEssentialsPlugin);
                 inspectorPane.addInput(panel, 'position', {
                     groupName: 'position'
                 });
+                const typeInput = inspectorPane.addInput(panel.userData, 'type', {
+                    options: {
+                        "Panel": "panel",
+                        "Sign Panel": "signPanel",
+                        "Sign": "sign",
+                    },
+                });
                 inspectorPane.addInput(panel.userData, 'text', {
                     groupName: 'text',
                 }).on('change', function(e) { redrawPanel(panel) });
-                inspectorPane.addInput(panel.userData, 'answer', {
+                const answerInput = inspectorPane.addInput(panel.userData, 'answer', {
                     groupName: 'answer',
-                }).on('change', function(e) { redrawPanel(panel) });
-                inspectorPane.on('change', function(e) { render() });                
+                })
+                answerInput.on('change', function(e) { redrawPanel(panel) });
+                const updateVisibility = function() {
+                    answerInput.hidden = panel.userData.type != "panel";
+                }
+                typeInput.on('change', function(e) { updateVisibility(); redrawPanel(panel) });
+                inspectorPane.on('change', function(e) { render() });
+                updateVisibility();          
             }
 
 			function onContextMenu( event ) {
