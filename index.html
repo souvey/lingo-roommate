@@ -216,7 +216,7 @@ panels = NodePath("../../Panels/Room")
 `
                         }
                         out += `
-[node name="Panel_${panel.id}" parent="${parent}" instance=ExtResource( 1 )]
+[node name="Panel_${panel.id}" parent="${parent}" instance=ExtResource( ${panel.userData.reverse ? 6 : 1 } )]
 text = ${JSON.stringify(panel.userData.text)}
 answer = ${JSON.stringify(panel.userData.answer)}
 placeholder_override = ${JSON.stringify(panel.userData.placeholderOverride)}
@@ -265,6 +265,7 @@ data = {
 [ext_resource path="res://nodes/sign_panel_snappy.tscn" type="PackedScene" id=3]
 [ext_resource path="res://nodes/sign_snappy.tscn" type="PackedScene" id=4]
 [ext_resource path="res://nodes/panel_snappy_countdown_auto.tscn" type="PackedScene" id=5]
+[ext_resource path="res://nodes/panel_snappy_reverse.tscn" type="PackedScene" id=6]
 [ext_resource path="res://blocks/blocksLibraryLarge.meshlib" type="MeshLibrary" id=12]
 [ext_resource path="res://materials/darkGrayBlock.material" type="Material" id=19]
 [ext_resource path="res://audio/success.wav" type="AudioStream" id=20]
@@ -574,7 +575,11 @@ ${serializePanels()}
                 }
                 if (type == "panel") {
                     ctx.fillStyle = "#0B0B0D";
-                    ctx.fillRect(15, 100, 250, 68);
+                    if (panel.userData.reverse) {
+                        ctx.fillRect(15, 12, 250, 68);
+                    } else {
+                        ctx.fillRect(15, 100, 250, 68);
+                    }
                 }
                 var size = 32;
                 if (type == "sign") {
@@ -590,9 +595,9 @@ ${serializePanels()}
                 ctx.textBaseline = 'middle';
 				ctx.textAlign = "center";
                 if (type == "panel") {
-                    ctx.fillText(panel.userData.text.toUpperCase(), 140, 56);
+                    ctx.fillText(panel.userData.text.toUpperCase(), 140, panel.userData.reverse ? 136 : 50);
                     ctx.fillStyle = "black";
-                    ctx.fillText(panel.userData.answer.toUpperCase(), 140, 136);
+                    ctx.fillText(panel.userData.answer.toUpperCase(), 140, panel.userData.reverse ? 50 : 136);
                 } else {
                     ctx.fillText(panel.userData.text.toUpperCase(), 140, 90);
                 }
@@ -632,6 +637,7 @@ ${serializePanels()}
                     achievedText: "",
                     behindCountdown: false,
                     type: "panel",
+                    reverse: false,
                     canvasCtx: ctx,
                 };
                 redrawPanel(panel);
@@ -772,6 +778,9 @@ ${serializePanels()}
                 advancedPane.addInput(panel.userData, 'placeholderOverride', {
                     label: 'placeholder override',
                 });
+                advancedPane.addInput(panel.userData, 'reverse', {
+                    label: 'reverse?',
+                }).on('change', function(e) { redrawPanel(panel) });
                 advancedPane.addInput(panel.userData, 'behindCountdown', {
                     label: 'behind countdown?',
                 });
