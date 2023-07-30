@@ -602,14 +602,14 @@ ${serializePanels()}
                     ctx.strokeText(panel.userData.text.toUpperCase(), 140, 90);
                 }
                 panel.children[0].material.map.needsUpdate = true;
-                panel.children[0].material.transparent = (type == "sign");
+                panel.children[0].material.alphaTest = (type == "sign") ? 0.5 : 0;
             }
 
             function createPanel() {
                 const panelGeometry = new THREE.PlaneGeometry( 1, 1);				
 				const offscreen = new OffscreenCanvas(280, 180);
 				const ctx = offscreen.getContext("2d");
-				const panelMaterial = new THREE.MeshBasicMaterial({side: THREE.DoubleSide});
+				const panelMaterial = new THREE.MeshBasicMaterial();
 				panelMaterial.map = new THREE.CanvasTexture(offscreen);
 				const panelMesh = new THREE.Mesh( panelGeometry, panelMaterial );
 				panelMesh.position.set(0, 0, 0.501);
@@ -617,6 +617,11 @@ ${serializePanels()}
 				const panel = new THREE.Group()
 				panel.position.set(0.5, 0.5, 0.5);
 				panel.add(panelMesh);
+				const panelCollisionMesh = new THREE.Mesh(panelGeometry, new THREE.MeshBasicMaterial({side: THREE.DoubleSide}));
+				panelCollisionMesh.position.set(0, 0, 0.501);
+				panelCollisionMesh.scale.set(0.9, 0.9, 0.9);
+                panelCollisionMesh.layers.set(3);
+                panel.add(panelCollisionMesh);
                 const box = new THREE.BoxHelper(panelMesh, 0xcccccc);
                 box.layers.set(2);
                 panel.add(box);
@@ -707,6 +712,7 @@ ${serializePanels()}
 				} else if (!transformControl.dragging && !transformControl2.dragging) {
 					raycaster.setFromCamera( pointer, camera );
 					raycaster.layers.set( 0 );
+                    raycaster.layers.enable(3);
 					const intersection = raycaster.intersectObjects(panels.children);
 					if (intersection.length > 0) {
                         selectPanel(intersection[0].object.parent);
