@@ -169,58 +169,36 @@
 				181: {name: "decayedBlock", albedo: "#527914", alpha: 1, roughness: 1},
 			}));
 
-			function Cell(x, y, z, item, cube) {
-				this.x = x;
-				this.y = y;
-				this.z = z;
-				this.item = item;
-				this.cube = cube;
-			}
-			Cell.key = function (x, y, z) {
-				return `cell_${x}_${y}_${z}`;
-			}
-			Cell.prototype.serialize = function () {
-				if (this.item < 0) {
-					return [];
-				}
+            function serializeGridmapCell(cell) {
+                const x = Math.round(cell.position.x - 0.5);
+                const y = Math.round(cell.position.y - 0.5);
+                const z = Math.round(cell.position.z - 0.5);
+                const item = cell.material.userData.item;
 				// WARNING: I believe this implementation is incorrect for numbers > 255.
 				// It looks like the Godot code maybe reverses individual bytes?
 				return [
-					((this.y & 0xFFFF) << 16) | this.x & 0xFFFF,
-					this.z & 0xFFFF,
+					((y & 0xFFFF) << 16) | x & 0xFFFF,
+					z & 0xFFFF,
 					// Ignore octant navigation (?) layer for now.
 					// Hopefully that isn't important.
-					this.item & 0xFFFF,
+					item & 0xFFFF,
 				];
-			}
-			Cell.prototype.key = function () {
-				return Cell.key(this.x, this.y, this.z);
-			}
+            }
 
-			function State() {
-				this.minX = -10;
-				this.maxX = 9;
-				this.minZ = -10;
-				this.maxZ = 10;
-				this.minY = 0;
-				this.maxY = 2;
-				this.cells = new Map();  // [x,y,z] -> {item, ...}
-			}
-
-			State.prototype.serializeCells = function () {
-				var out = []
-				for (const [key, value] of this.cells) {
-					out = out.concat(value.serialize())
-				}
+			function serializeCells() {
+                var out = []
+                for (const cell of gridmapCells.children) {
+                    out = out.concat(serializeGridmapCell(cell));
+                }
 				return out;
 			}
 
-            State.prototype.serializeMatrix = function(matrix) {
+            function serializeMatrix(matrix) {
                 const el = matrix.elements;
                 return [el[0], el[4], el[8], el[1], el[5], el[9], el[2], el[6], el[10], el[12], el[13], el[14]];
             }
 
-            State.prototype.serializePanels = function() {
+            function serializePanels() {
                 var out = ""
                 for (const panel of panels.children) {
                     if (panel.userData.type == "panel") {
@@ -228,26 +206,26 @@
 [node name="Panel_${panel.id}" parent="Panels/Room" instance=ExtResource( 1 )]
 text = "${panel.userData.text}"
 answer = "${panel.userData.answer}"
-transform = Transform( ${this.serializeMatrix(panel.matrixWorld) } )
+transform = Transform( ${serializeMatrix(panel.matrixWorld) } )
 `
                     } else if (panel.userData.type == "signPanel") {
                         out += `
 [node name="PanelSign_${panel.id}" parent="Decorations" instance=ExtResource( 3 )]
 value = "${panel.userData.text}"
-transform = Transform( ${this.serializeMatrix(panel.matrixWorld) } )
+transform = Transform( ${serializeMatrix(panel.matrixWorld) } )
 `
                     } else if (panel.userData.type == "sign") {
                         out += `
 [node name="Sign_${panel.id}" parent="Decorations" instance=ExtResource( 4 )]
 value = "${panel.userData.text}"
-transform = Transform( ${this.serializeMatrix(panel.matrixWorld) } )
+transform = Transform( ${serializeMatrix(panel.matrixWorld) } )
 `
                     }
                 }
                 return out;
             }
 
-			State.prototype.serialize = function () {
+			function serializeScene() {
 				return `[gd_scene load_steps=10 format=2]
 
 [ext_resource path="res://nodes/panel_snappy.tscn" type="PackedScene" id=1]
@@ -289,7 +267,7 @@ mesh_library = ExtResource( 12 )
 use_in_baked_light = true
 cell_size = Vector3( 1, 1, 1 )
 data = {
-"cells": PoolIntArray( ${this.serializeCells()} )
+"cells": PoolIntArray( ${serializeCells()} )
 }
 __meta__ = {
 "_editor_clip_": 0,
@@ -305,15 +283,14 @@ script = ExtResource( 21 )
 [node name="Panels" type="Node" parent="."]
 
 [node name="Room" type="Node" parent="Panels"]
-${this.serializePanels()}
+${serializePanels()}
 `
 			}
-			let state;
 
 			let camera, scene, raycaster, renderer;
 			let controls;
 
-			let gridmapPlane, gridmapPlaceholderCube, gridmapMaterialId;
+			let gridmapPlane, gridmapPlaceholderCube, gridmapMaterialId, gridmapCells;
 
 			let transformControl, transformControl2;
 			let panels;
@@ -326,8 +303,6 @@ ${this.serializePanels()}
 			init();
 
 			function init() {
-				state = new State();
-
 				renderer = new THREE.WebGLRenderer( { antialias: true } );
 				renderer.setPixelRatio( window.devicePixelRatio );
 				renderer.setSize( window.innerWidth, window.innerHeight );
@@ -345,6 +320,9 @@ ${this.serializePanels()}
                 const player = new THREE.CameraHelper( playerCamera );
                 scene.add(playerCamera);
                 scene.add( player );
+                const playerCapsule = new THREE.Mesh( new THREE.CapsuleGeometry( 0.5, 1, 2, 8 ), new THREE.MeshBasicMaterial( {color: 0xcccccc, wireframe: true, opacity: 0.25, transparent: true} ) );
+                playerCapsule.position.y = 1;
+                scene.add( playerCapsule );
 
 				const sky = new Sky();
 				sky.scale.setScalar( 450000 );
@@ -377,6 +355,9 @@ ${this.serializePanels()}
 
 				for (const [key, value] of materials) {
 					value.material = new THREE.MeshStandardMaterial( { color: value.albedo, roughness: value.roughness, opacity: value.alpha, transparent: value.alpha < 1 } );
+                    value.material.userData = {
+                        item: parseInt(key),
+                    }
 				}
 
                 selectedBox = new THREE.BoxHelper(undefined, 0xffff00 );
@@ -407,6 +388,8 @@ ${this.serializePanels()}
 				gridHelper2.rotation.x = Math.PI/2;
 				gridHelper2.renderOrder = 2;
 				gridmapPlane.add( gridHelper2 );
+                gridmapCells = new THREE.Group();
+                scene.add(gridmapCells);
 
 				const planegeometry = new THREE.PlaneGeometry( 20, 20 );
 				const planematerial = new THREE.MeshStandardMaterial( materials.get("14").material );
@@ -525,7 +508,7 @@ ${this.serializePanels()}
 				}
 
 				document.getElementById("download").addEventListener("click", function(e) {
-					const file = new Blob([state.serialize()], {
+					const file = new Blob([serializeScene()], {
 						type: 'text/plain'
 					});
 					const element = document.createElement('a');
@@ -628,18 +611,21 @@ ${this.serializePanels()}
 				if (gridmapMaterialId == -1) {
 					return;
 				}
-				const key = Cell.key(...point.toArray());
-				var existing = state.cells.get(key);
-				if (existing && (event.buttons & 2 || ((event.buttons & 1 ) && existing.item != gridmapMaterialId))) {
-					existing.cube.removeFromParent();
-					state.cells.delete(key);
+                var existing = null;
+                for (const cell of gridmapCells.children) {
+                    if (cell.position.equals(gridmapPlaceholderCube.position)) {
+                        existing = cell;
+                        break;
+                    }
+                }
+				if (existing && (event.buttons & 2 || ((event.buttons & 1 ) && existing.material.userData.item != gridmapMaterialId))) {
+					existing.removeFromParent();
 					existing = null;
 				}
 				if (event.buttons & 1 && !existing) {
 					const cube = gridmapPlaceholderCube.clone()
 					cube.renderOrder = 0;
-					scene.add(cube);
-					state.cells.set(key, new Cell(...point.toArray(), gridmapMaterialId, cube));
+					gridmapCells.add(cube);
 				}
 			}
 
