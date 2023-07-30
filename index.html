@@ -185,9 +185,9 @@
 				];
             }
 
-			function serializeCells() {
+			function serializeCells(gridmap) {
                 var out = []
-                for (const cell of gridmapCells.children) {
+                for (const cell of gridmap.getObjectByName("cells").children) {
                     out = out.concat(serializeGridmapCell(cell));
                 }
 				return out;
@@ -221,6 +221,24 @@ value = "${panel.userData.text}"
 transform = Transform( ${serializeMatrix(panel.matrixWorld) } )
 `
                     }
+                }
+                return out;
+            }
+
+            function serializeGridmaps() {
+                const gridmaps = [gridmap];
+                var out = "";
+                for (const gridmap of gridmaps) {
+                    out += `
+[node name="GridMap_${gridmap.id}" type="GridMap" parent="."]
+transform = Transform( ${serializeMatrix(gridmap.matrixWorld) } )
+process_priority = 1
+mesh_library = ExtResource( 12 )
+use_in_baked_light = true
+cell_size = Vector3( 1, 1, 1 )
+data = {
+"cells": PoolIntArray( ${serializeCells(gridmap)} )
+}`;
                 }
                 return out;
             }
@@ -261,18 +279,7 @@ material/0 = ExtResource( 19 )
 [node name="CollisionShape" type="CollisionShape" parent="Floor1/StaticBody"]
 shape = SubResource( 2 )
 
-[node name="GridMap" type="GridMap" parent="."]
-process_priority = 1
-mesh_library = ExtResource( 12 )
-use_in_baked_light = true
-cell_size = Vector3( 1, 1, 1 )
-data = {
-"cells": PoolIntArray( ${serializeCells()} )
-}
-__meta__ = {
-"_editor_clip_": 0,
-"_editor_floor_": Vector3( 10, 0, 0 )
-}
+${serializeGridmaps()}
 
 [node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="."]
 stream = ExtResource( 20 )
@@ -290,7 +297,7 @@ ${serializePanels()}
 			let camera, scene, raycaster, renderer;
 			let controls;
 
-			let gridmapPlane, gridmapPlaceholderCube, gridmapMaterialId, gridmapCells;
+			let gridmap, gridmapMaterialId;
 
 			let transformControl, transformControl2;
 			let panels;
@@ -365,31 +372,37 @@ ${serializePanels()}
                 selectedBox.renderOrder = 3;
                 scene.add(selectedBox);
 
-				const geometry = new THREE.BoxGeometry( 1, 1, 1 );
-				gridmapMaterialId = -1;
-				gridmapPlaceholderCube = new THREE.Mesh( geometry, materials.get("4").material );
-				gridmapPlaceholderCube.position.set(1.5, 0.5, 0.5);
-				gridmapPlaceholderCube.renderOrder = 4;
-                gridmapPlaceholderCube.visible = false;
-				scene.add( gridmapPlaceholderCube);
 				const gridHelper = new THREE.GridHelper( 20, 20 );
 				gridHelper.position.y = 0;
 				gridHelper.renderOrder = 1;
 				scene.add( gridHelper );
 
-				const planegeometry2 = new THREE.PlaneGeometry( 20, 20 );
-				gridmapPlane = new THREE.Mesh( planegeometry2, new THREE.MeshStandardMaterial( {color: 0xffff00, side: THREE.DoubleSide} ) );
+                gridmap = new THREE.Group();
+                //gridmap.scale.set(0.5, 0.5, 0.5);
+                scene.add(gridmap);
+				const geometry = new THREE.BoxGeometry( 1, 1, 1 );
+				gridmapMaterialId = -1;
+				const gridmapPlaceholderCube = new THREE.Mesh( geometry, materials.get("4").material );
+				gridmapPlaceholderCube.position.set(1.5, 0.5, 0.5);
+				gridmapPlaceholderCube.renderOrder = 4;
+                gridmapPlaceholderCube.visible = false;
+                gridmapPlaceholderCube.name = "placeholder";
+                gridmap.add( gridmapPlaceholderCube);
+                const planegeometry2 = new THREE.PlaneGeometry( 20, 20 );
+				const gridmapPlane = new THREE.Mesh( planegeometry2, new THREE.MeshStandardMaterial( {color: 0xffff00, side: THREE.DoubleSide} ) );
 				gridmapPlane.layers.set(1);
 				gridmapPlane.rotation.x = -Math.PI/2;
 				gridmapPlane.position.y = 0;
 				gridmapPlane.visible = false;
-				scene.add( gridmapPlane );
+                gridmapPlane.name = "plane";
+				gridmap.add( gridmapPlane );
 				const gridHelper2 = new THREE.GridHelper( 20, 20, "orange", "orange" );
 				gridHelper2.rotation.x = Math.PI/2;
 				gridHelper2.renderOrder = 2;
 				gridmapPlane.add( gridHelper2 );
-                gridmapCells = new THREE.Group();
-                scene.add(gridmapCells);
+                const gridmapCells = new THREE.Group();
+                gridmapCells.name = "cells";
+                gridmap.add(gridmapCells);
 
 				const planegeometry = new THREE.PlaneGeometry( 20, 20 );
 				const planematerial = new THREE.MeshStandardMaterial( materials.get("14").material );
@@ -464,12 +477,12 @@ ${serializePanels()}
 					materialElement.id = `material_${key}`;
 					materialElement.addEventListener("click", function(e) {
 						gridmapMaterialId = parseInt(key, 10);
-						gridmapPlaceholderCube.material = value.material;
+						gridmap.getObjectByName("placeholder").material = value.material;
 						controls.enableRotate = false;
 						controls.enablePan = false;
 						transformControl.detach();
 						transformControl2.detach();
-						gridmapPlane.visible = true;
+						gridmap.getObjectByName("plane").visible = true;
 						render();
 					})
                     if (value.roughness < 1) {
@@ -574,24 +587,29 @@ ${serializePanels()}
 			}
 
 			function raycastGridmapCoordinates() {
+                const plane = gridmap.getObjectByName("plane");
 				raycaster.setFromCamera( pointer, camera );
 				raycaster.layers.set( 1 ); 
-				const intersection = raycaster.intersectObject(gridmapPlane);
+				const intersection = raycaster.intersectObject(plane);
 				if (intersection.length > 0) {
-					let point = intersection[0].point.clone().floor();
-					point.y = gridmapPlane.position.y;
+                    const scale = new THREE.Vector3();
+                    plane.getWorldScale(scale);
+                    const point = intersection[0].point.clone().divide(scale).floor();
+					point.y = plane.position.y;
 					return point;
 				}
 				return null;
 			}
 
 			function maybeAddToGridmap(point, event) {
+                const cells = gridmap.getObjectByName("cells")
+                const placeholder = gridmap.getObjectByName("placeholder");
 				if (gridmapMaterialId == -1) {
 					return;
 				}
                 var existing = null;
-                for (const cell of gridmapCells.children) {
-                    if (cell.position.equals(gridmapPlaceholderCube.position)) {
+                for (const cell of cells.children) {
+                    if (cell.position.equals(placeholder.position)) {
                         existing = cell;
                         break;
                     }
@@ -601,21 +619,22 @@ ${serializePanels()}
 					existing = null;
 				}
 				if (event.buttons & 1 && !existing) {
-					const cube = gridmapPlaceholderCube.clone()
+					const cube = placeholder.clone()
 					cube.renderOrder = 0;
-					gridmapCells.add(cube);
+					cells.add(cube);
 				}
 			}
 
 			function onPointerMove( event ) {
+                const placeholder = gridmap.getObjectByName("placeholder");
 				pointer.set( ( event.clientX / window.innerWidth ) * 2 - 1, - ( event.clientY / window.innerHeight ) * 2 + 1 );
 				const point = raycastGridmapCoordinates();
 				if (point && gridmapMaterialId != -1) {
-					gridmapPlaceholderCube.visible = true;
-					gridmapPlaceholderCube.position.copy(point).addScalar(0.5);
+					placeholder.visible = true;
+					placeholder.position.copy(point).addScalar(0.5);
 					maybeAddToGridmap(point, event);
 				} else {
-					gridmapPlaceholderCube.visible = false;
+					placeholder.visible = false;
 				}
 				render();
 			}
@@ -690,22 +709,23 @@ ${serializePanels()}
 			}
 
 			function onDocumentKeyDown( event ) {
-				if (gridmapPlane.visible && event.code == "KeyQ" && !event.repeat) {
-					gridmapPlane.position.y -= 1;
+                const plane = gridmap.getObjectByName("plane");
+				if (plane.visible && event.code == "KeyQ" && !event.repeat) {
+					plane.position.y -= 1;
 					render();
-				} else if (gridmapPlane.visible && event.code == "KeyE" && !event.repeat) {
-					gridmapPlane.position.y += 1;
+				} else if (plane.visible && event.code == "KeyE" && !event.repeat) {
+					plane.position.y += 1;
 					render();
 				} else if ((event.code == "Escape" || event.code == "Delete" || event.code == "KeyP") && !event.repeat) {
                     const selected = transformControl.object;
 					controls.enableRotate = true;
 					controls.enablePan = true;
 					gridmapMaterialId = -1;
-					gridmapPlaceholderCube.visible = false;
+					gridmap.getObjectByName("placeholder").visible = false;
 					transformControl.detach();
 					transformControl2.detach();
                     selectedBox.visible = false;
-					gridmapPlane.visible = false;
+					plane.visible = false;
                     if (inspectorPane) {
                         inspectorPane.dispose();
                         inspectorPane = null;
