@@ -17,24 +17,21 @@
 				position: fixed;
 				left: 16px;
 				top: 16px;
-				background: white;
 				padding: 16px;
 				max-height: 100%;
-				max-width: 25%;
+				width: 15%;
+				max-width: 15%;
 				box-sizing: border-box;
-				overflow: auto;
 			}
 			.overlay-right {
 				position: fixed;
 				right: 16px;
 				top: 16px;
-				background: white;
 				padding: 16px;
 				max-height: 100%;
 				width: 25%;
 				max-width: 25%;
 				box-sizing: border-box;
-				overflow: auto;
 			}
 			.materials {
 				line-height: 0;
@@ -74,6 +71,19 @@
                 left: 0;
                 bottom: 0;
                 background: linear-gradient(to bottom, rgba(255,255,255,0.5) 0%,rgba(255,255,255,0) 100%);
+            }
+            .help-text ul {
+                margin: 0 8px;
+                padding: 4px;
+                color: white;
+            }
+            .lingo-title {
+                font-family: Lingo;
+                font-size: 36px;
+                margin-bottom: 16px;
+                color: white;
+                -webkit-text-stroke-width: 1px;
+                -webkit-text-stroke-color: black;
             }
 		</style>
 	</head>
@@ -408,35 +418,48 @@ ${serializePanels()}
                 const gridmapQuarter = createGridmap(0.5);
                 gridmapQuarter.name = "Gridmap Quarter";
                 gridmaps.add(gridmapQuarter);
-                const gridmapselect = document.querySelector(".gridmapselect");
-                const gridmapFullButton = document.createElement("button");
-                gridmapFullButton.innerText = "Paint Gridmap (Full)";
-                gridmapFullButton.addEventListener("click", function(e) {gridmapFullButton.blur(); selectGridmap(gridmapFull); render();});
-                gridmapselect.appendChild(gridmapFullButton);
-                const gridmapQuarterButton = document.createElement("button");
-                gridmapQuarterButton.innerText = "Paint Gridmap (Quarter)";
-                gridmapQuarterButton.addEventListener("click", function(e) {gridmapQuarterButton.blur(); selectGridmap(gridmapQuarter); render();});
-                gridmapselect.appendChild(gridmapQuarterButton);
-                const panelButton = document.createElement("button");
-                panelButton.innerText = "Add Panel";
-                panelButton.addEventListener("click", function(e) {
+
+                const controlPane = new Tweakpane.Pane({container: document.querySelector(".overlay-left"), title: 'Controls'});
+                controlPane.addButton({title:"Paint Blocks (Full)"}).on("click", function(e) {
+                    selectGridmap(gridmapFull); render();
+                });
+                controlPane.addButton({title:"Paint Blocks (Quarter)"}).on("click", function(e) {
+                    selectGridmap(gridmapQuarter); render();
+                });
+                controlPane.addButton({title:"Add New Panel/Sign"}).on("click", function(e) {
                     deselectAll();
-                    panelButton.blur();
                     const panel = createPanel();
                     panels.add(panel);
                     selectPanel(panel);
                     render();
                 });
-                gridmapselect.appendChild(panelButton);
-                const deselectButton = document.createElement("button");
-                deselectButton.innerText = "Deselect";
-                deselectButton.addEventListener("click", function(e) {
-                    deselectAll();
-                    deselectButton.blur();
-                    render();
+                controlPane.addSeparator();
+                controlPane.addButton({title:"Export to Lingo TSCN"}).on("click", function(e) {
+					const file = new Blob([serializeScene()], {
+						type: 'text/plain'
+					});
+					const element = document.createElement('a');
+					element.href = URL.createObjectURL(file);
+					element.download = 'level.tscn';
+					element.click();
                 });
-                gridmapselect.appendChild(deselectButton);
-
+                const helpFolder = controlPane.addFolder({
+                    title: 'Help',
+                }).addSeparator();
+                helpFolder.element.innerHTML = `
+                    <div class="help-text"><ul>
+                        <li>Choose Paint Blocks above to start placing blocks or Add New Panel/Sign to add a new panel at position (0, 0, 0)
+                        <li>While painting or editing a panel, use the Inspector window on the right of the screen
+                        <li>To move the camera:
+                            <ul>
+                                <li>If you are in Paint Blocks mode, first exit it by pressing ESC (Escape) or clicking Stop Editing in the inspector
+                                <li>Rotate the camera by clicking and dragging with the Left Mouse button
+                                <li>Pan the camera by clicking and dragging with the Right Mouse button
+                                <li>Zoom the camera by using the Mouse Wheel
+                            </ul>
+                        </li>
+                    </ul></div>
+                `
 
 				const planegeometry = new THREE.BoxGeometry( 50, 1, 50 );
 				const planematerial = new THREE.MeshStandardMaterial( materials.get("14").material );
@@ -501,16 +524,6 @@ ${serializePanels()}
                 document.querySelector('.overlay-right').addEventListener('keyup', function(e) {e.stopPropagation();});
 
 				window.addEventListener( 'resize', onWindowResize );
-
-				document.getElementById("download").addEventListener("click", function(e) {
-					const file = new Blob([serializeScene()], {
-						type: 'text/plain'
-					});
-					const element = document.createElement('a');
-					element.href = URL.createObjectURL(file);
-					element.download = 'level.tscn';
-					element.click();
-				});
 
 				render();
 			}
@@ -817,7 +830,7 @@ ${serializePanels()}
                     render();
                 });
                 inspectorPane.addInput(selectedGridmap.getObjectByName("plane").position, 'y', {
-                    label: 'Floor (keyboard shortcuts: Q/E)',
+                    label: 'Floor',
                     step: 1,
                 });
                 const blocksFolder = inspectorPane.addFolder({
@@ -850,6 +863,18 @@ ${serializePanels()}
                     });
                     materialsElement.appendChild(materialElement);
 				}
+                const helpFolder = inspectorPane.addFolder({
+                    title: 'Help',
+                }).addSeparator();
+                helpFolder.element.innerHTML = `
+                    <div class="help-text"><ul>
+                        <li>Left click in the scene to place a block (drag for multiple)
+                        <li>Right click in the scene to delete a block (drag for multiple)
+                        <li>Change materials by clicking in the Block Library above
+                        <li>Change the height blocks are placed at using the Floor slider/box above, or with keyboard shortcuts Q (down) and E (up)
+                        <li>To stop placing blocks, press Stop Editing above, or use keyboard shortcut ESC
+                    </ul></div>
+                `
             }
 
             function deselectAll() {
@@ -878,11 +903,6 @@ ${serializePanels()}
                     if (event.code == "Delete" && selected) {
                         selected.removeFromParent();
                     }
-                    if (event.code == "KeyP") {
-                        const panel = createPanel();
-                        panels.add(panel);
-                        selectPanel(panel);
-                    }
 					render();
 				}
 			}
@@ -900,20 +920,9 @@ ${serializePanels()}
 
 		</script>
 		<div class="overlay-left">
-            <div style="font-family: Lingo">Lingo</div>
-			<button id="download">Download Tscn</button>
+            <div class="lingo-title">Lingo RoomMate</div>
 		</div>
 		<div class="overlay-right">
-			<ul>
-				<li>Escape: deselect</li>
-				<li>Q: floor up</li>
-				<li>E: floor down</li>
-                <li>P: add panel</li>
-				<li>Left click: place block / rotate camera</li>
-				<li>Right click: remove block / pan camera</li>
-				<li>Mouse wheel: zoom camera</li>
-			</ul>
-            <div class="gridmapselect"></div>
 		</div>
 	</body>
 </html>
