@@ -204,20 +204,22 @@
                     if (panel.userData.type == "panel") {
                         out += `
 [node name="Panel_${panel.id}" parent="Panels/Room" instance=ExtResource( 1 )]
-text = "${panel.userData.text}"
-answer = "${panel.userData.answer}"
+text = ${JSON.stringify(panel.userData.text)}
+answer = ${JSON.stringify(panel.userData.answer)}
+placeholder_override = ${JSON.stringify(panel.userData.placeholderOverride)}
+achieved_text = ${JSON.stringify(panel.userData.achievedText)}
 transform = Transform( ${serializeMatrix(panel.matrixWorld) } )
 `
                     } else if (panel.userData.type == "signPanel") {
                         out += `
 [node name="PanelSign_${panel.id}" parent="Decorations" instance=ExtResource( 3 )]
-value = "${panel.userData.text}"
+value = ${JSON.stringify(panel.userData.text)}
 transform = Transform( ${serializeMatrix(panel.matrixWorld) } )
 `
                     } else if (panel.userData.type == "sign") {
                         out += `
 [node name="Sign_${panel.id}" parent="Decorations" instance=ExtResource( 4 )]
-value = "${panel.userData.text}"
+value = ${JSON.stringify(panel.userData.text)}"
 transform = Transform( ${serializeMatrix(panel.matrixWorld) } )
 `
                     }
@@ -570,6 +572,8 @@ ${serializePanels()}
                 panel.userData = {
                     text: "HI",
                     answer: "HI",
+                    placeholderOverride: "",
+                    achievedText: "",
                     type: "panel",
                     canvasCtx: ctx,
                 };
@@ -703,9 +707,19 @@ ${serializePanels()}
                 }).on('change', function(e) { redrawPanel(panel) });
                 const answerInput = basicsPane.addInput(panel.userData, 'answer', {
                     groupName: 'answer',
-                })
+                });
                 answerInput.on('change', function(e) { redrawPanel(panel) });
+                const advancedPane = inspectorPane.addFolder({
+                    title: 'Panel Advanced',
+                }); 
+                advancedPane.addInput(panel.userData, 'achievedText', {
+                    groupName: 'achievement text',
+                });
+                advancedPane.addInput(panel.userData, 'placeholderOverride', {
+                    groupName: 'placeholder override',
+                });
                 const updateVisibility = function() {
+                    advancedPane.hidden = panel.userData.type != "panel";
                     answerInput.hidden = panel.userData.type != "panel";
                 }
                 typeInput.on('change', function(e) { updateVisibility(); redrawPanel(panel) });
