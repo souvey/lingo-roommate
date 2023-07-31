@@ -858,6 +858,11 @@ ${serializePanels()}
                 selectedBox.setFromObject(panel.children[0]);
                 inspectorPane = new Tweakpane.Pane({container: document.querySelector(".overlay-right"), title: 'Inspector'});
                 inspectorPane.addButton({title:"Duplicate"}).on("click", function(e) {duplicatePanel(panel); render()});
+                inspectorPane.addButton({title:"Delete"}).on("click", function(e) {
+                    deselectAll();
+                    panel.removeFromParent();
+					render();
+                })
                 const transformPane = inspectorPane.addFolder({
                     title: 'Transform',
                 });
