@@ -1,70 +1,70 @@
 <!DOCTYPE html>
 <html lang="en">
-	<head>
-		<title>Lingo RoomMate</title>
-		<meta charset="utf-8">
-		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-		<style>
+    <head>
+        <title>Lingo RoomMate</title>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+        <style>
             @font-face {
                 font-family: Lingo;
                 src: url("Lingo.ttf");
             }
-			body {
-				margin: 0;
-				overscroll-behavior: none;
-			}
-			.overlay-left {
-				position: fixed;
-				left: 16px;
-				top: 16px;
-				padding: 16px;
-				max-height: 100%;
-				width: 250px;
-				box-sizing: border-box;
-			}
-			.overlay-right {
-				position: fixed;
-				right: 16px;
-				top: 16px;
-				padding: 16px;
-				max-height: 100%;
+            body {
+                margin: 0;
+                overscroll-behavior: none;
+            }
+            .overlay-left {
+                position: fixed;
+                left: 16px;
+                top: 16px;
+                padding: 16px;
+                max-height: 100%;
+                width: 250px;
+                box-sizing: border-box;
+            }
+            .overlay-right {
+                position: fixed;
+                right: 16px;
+                top: 16px;
+                padding: 16px;
+                max-height: 100%;
                 width: 372px;
-				box-sizing: border-box;
-			}
-			.materials {
-				line-height: 0;
+                box-sizing: border-box;
+            }
+            .materials {
+                line-height: 0;
                 position: relative;
                 z-index: 1;
-			}
-			.material {
-				display: inline-block;
-				width: 32px;
-				height: 32px;
-				border-radius: 4px;
-				margin: 4px;
-				border: 1px solid rgba(0, 0, 0, 0.25);
-				position: relative;
-				overflow: hidden;
-			}
+            }
+            .material {
+                display: inline-block;
+                width: 32px;
+                height: 32px;
+                border-radius: 4px;
+                margin: 4px;
+                border: 1px solid rgba(0, 0, 0, 0.25);
+                position: relative;
+                overflow: hidden;
+            }
             .selected-material {
                 outline: 2px solid white;
             }
-			.material::after {
-				content: '';
-				position: absolute;
-				z-index: -1;
-				left: 0;
-				right: 0;
-				bottom: 0;
-				top: 0;
-				background: repeating-linear-gradient(
-					45deg,
-					#999,
-					#999 5px,
-					#fff 5px,
-					#fff 10px
-				);
-			}
+            .material::after {
+                content: '';
+                position: absolute;
+                z-index: -1;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                top: 0;
+                background: repeating-linear-gradient(
+                    45deg,
+                    #999,
+                    #999 5px,
+                    #fff 5px,
+                    #fff 10px
+                );
+            }
             .material-gloss {
                 position: absolute;
                 top: 0;
@@ -86,14 +86,14 @@
                 -webkit-text-stroke-width: 1px;
                 -webkit-text-stroke-color: black;
             }
-		</style>
-	</head>
-	<body>
+        </style>
+    </head>
+    <body>
         <script src="https://cdn.jsdelivr.net/npm/tweakpane@3.1.10/dist/tweakpane.min.js"></script>
         <script src="https://unpkg.com/@popperjs/core@2"></script>
-        <script src="https://unpkg.com/tippy.js@6"></script>        
-		<script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
-		<script type="importmap">
+        <script src="https://unpkg.com/tippy.js@6"></script>
+        <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+        <script type="importmap">
             {
                 "imports": {
                     "three": "https://unpkg.com/three/build/three.module.js",
@@ -101,110 +101,110 @@
                 }
             }
         </script>
-		<script type="module">
-			import * as THREE from 'three';
-			import { Sky } from 'three/examples/jsm/objects/Sky.js';
-			import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
-			import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js'
-			import { CSS3DRenderer } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
+        <script type="module">
+            import * as THREE from 'three';
+            import { Sky } from 'three/examples/jsm/objects/Sky.js';
+            import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+            import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js'
+            import { CSS3DRenderer } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
 
-			const materials = new Map(Object.entries({
-				0: {name: "yellowBlock", albedo: "#a6aa19", alpha: 1, roughness: 1},
-				1: {name: "greenBlock", albedo: "#108e29", alpha: 1, roughness: 0.6},
-				2: {name: "brownBlock", albedo: "#895409", alpha: 1, roughness: 1},
-				3: {name: "blueBlock", albedo: "#094a89", alpha: 1, roughness: 1},
-				4: {name: "whiteBlock", albedo: "#ffffff", alpha: 1, roughness: 0},
-				5: {name: "blackBlock", albedo: "#000000", alpha: 1, roughness: 0},
-				6: {name: "redBlock", albedo: "#aa1919", alpha: 1, roughness: 0.6},
-				7: {name: "purpleBlock", albedo: "#8a19aa", alpha: 1, roughness: 0.41},
-				8: {name: "sunBlock", albedo: "#ffff00", alpha: 1, roughness: 0},
-				9: {name: "orangeBlock", albedo: "#ff8900", alpha: 1, roughness: 1},
-				10: {name: "pinkBlock", albedo: "#ff59ad", alpha: 1, roughness: 1},
-				11: {name: "lightBlueBlock", albedo: "#66a8e8", alpha: 1, roughness: 1},
-				12: {name: "lightBrownBlock", albedo: "#b4944c", alpha: 1, roughness: 0.18},
-				13: {name: "lightGrayBlock", albedo: "#b1b1b1", alpha: 1, roughness: 1},
-				14: {name: "darkGrayBlock", albedo: "#464646", alpha: 1, roughness: 1},
-				15: {name: "brightRedBlock", albedo: "#ff0000", alpha: 1, roughness: 1},
-				16: {name: "aquaBlock", albedo: "#00ffb1", alpha: 1, roughness: 1},
-				17: {name: "glassBlock", albedo: "#9d9d9d", alpha: 0.4/*0.172549*/, roughness: 1},
-				18: {name: "tealBlock", albedo: "#2791a5", alpha: 1, roughness: 1},
-				19: {name: "magentaBlock", albedo: "#ff00be", alpha: 1, roughness: 1},
-				20: {name: "limeBlock", albedo: "#4aff00", alpha: 1, roughness: 1},
-				21: {name: "creamBlock", albedo: "#f3d793", alpha: 1, roughness: 1},
-				56: {name: "darkCyanBlock", albedo: "#0d363a", alpha: 1, roughness: 1},
-				57: {name: "darkBlueBlock", albedo: "#000033", alpha: 1, roughness: 1},
-				58: {name: "darkPinkBlock", albedo: "#330033", alpha: 1, roughness: 1},
-				59: {name: "darkPurpleBlock", albedo: "#140033", alpha: 1, roughness: 1},
-				60: {name: "darkRedBlock", albedo: "#330000", alpha: 1, roughness: 1},
-				61: {name: "darkYellowBlock", albedo: "#333300", alpha: 1, roughness: 1},
-				62: {name: "lightGrayBlockHalfAlpha", albedo: "#b0b0b0", alpha: 0.65098, roughness: 1},
-				63: {name: "pastelBlueBlock", albedo: "#a3a5ff", alpha: 1, roughness: 1},
-				64: {name: "pastelGreenBlock", albedo: "#ccffbb", alpha: 1, roughness: 1},
-				65: {name: "pastelPurpleBlock", albedo: "#cb9fff", alpha: 1, roughness: 1},
-				66: {name: "pastelRedBlock", albedo: "#ffc3c3", alpha: 1, roughness: 1},
-				67: {name: "pastelCyanBlock", albedo: "#a3fffb", alpha: 1, roughness: 1},
-				68: {name: "goldBlock", albedo: "#ecbd00", alpha: 1, roughness: 0},
-				69: {name: "silverBlock", albedo: "#bec2cb", alpha: 1, roughness: 0},
-				82: {name: "transparentWhiteBlock", albedo: "#ffffff", alpha: 0.65098, roughness: 1},
-				83: {name: "transparentBlackBlock", albedo: "#000000", alpha: 0.65098, roughness: 1},
-				84: {name: "transparentRedBlock", albedo: "#aa1919", alpha: 0.65098, roughness: 1},
-				85: {name: "transparentBlueBlock", albedo: "#094a89", alpha: 0.65098, roughness: 1},
-				86: {name: "transparentGreenBlock", albedo: "#108e29", alpha: 0.65098, roughness: 1},
-				87: {name: "transparentYellowBlock", albedo: "#ffff00", alpha: 0.65098, roughness: 1},
-				88: {name: "transparentPurpleBlock", albedo: "#8a19aa", alpha: 0.65098, roughness: 1},
-				89: {name: "transparentOrangeBlock", albedo: "#ff8900", alpha: 0.65098, roughness: 1},
-				90: {name: "transparentBrownBlock", albedo: "#895409", alpha: 0.65098, roughness: 1},
-				91: {name: "cyanBlock", albedo: "#00ffff", alpha: 1, roughness: 1},
-				92: {name: "plumBlock", albedo: "#991b51", alpha: 1, roughness: 0.6},
-				93: {name: "navyBlock", albedo: "#000070", alpha: 1, roughness: 1},
-				94: {name: "turquoiseBlock", albedo: "#029f84", alpha: 1, roughness: 0.41},
-				95: {name: "cobaltBlock", albedo: "#1818f0", alpha: 1, roughness: 0},
-				96: {name: "pastelWashedGreenBlock", albedo: "#77dd77", alpha: 1, roughness: 1},
-				97: {name: "pastelWashedPinkBlock", albedo: "#ff59ad", alpha: 1, roughness: 1},
-				98: {name: "mediumRedBlock", albedo: "#861515", alpha: 1, roughness: 1},
-				160: {name: "matteBlackBlock", albedo: "#000000", alpha: 1, roughness: 1},
-				163: {name: "transparentAquaBlock", albedo: "#00ffb1", alpha: 0.65098, roughness: 1},
-				164: {name: "transparentActualLimeBlock", albedo: "#80ff00", alpha: 0.65098, roughness: 1},
-				165: {name: "transparentBrightRedBlock", albedo: "#ff0000", alpha: 0.65098, roughness: 1},
-				166: {name: "transparentCobaltBlock", albedo: "#1818f0", alpha: 0.65098, roughness: 1},
-				167: {name: "transparentCreamBlock", albedo: "#f3d793", alpha: 0.65098, roughness: 1},
-				168: {name: "transparentCyanBlock", albedo: "#00ffff", alpha: 0.65098, roughness: 1},
-				169: {name: "transparentLightBrownBlock", albedo: "#b4944c", alpha: 0.65098, roughness: 1},
-				170: {name: "transparentLimeBlock", albedo: "#4aff00", alpha: 0.65098, roughness: 1},
-				171: {name: "transparentMagentaBlock", albedo: "#ff00be", alpha: 0.65098, roughness: 1},
-				172: {name: "transparentNavyBlock", albedo: "#000070", alpha: 0.65098, roughness: 1},
-				173: {name: "transparentPastelCyanBlock", albedo: "#a3fffb", alpha: 0.65098, roughness: 1},
-				174: {name: "transparentPastelRedBlock", albedo: "#ffc3c3", alpha: 0.65098, roughness: 1},
-				175: {name: "transparentPinkBlock", albedo: "#ff59ad", alpha: 0.65098, roughness: 1},
-				176: {name: "transparentTurquoiseBlock", albedo: "#029f84", alpha: 0.65098, roughness: 1},
-				177: {name: "actualLimeBlock", albedo: "#80ff00", alpha: 1, roughness: 0},
-				178: {name: "coralBlock", albedo: "#ff7f50", alpha: 1, roughness: 1},
-				181: {name: "decayedBlock", albedo: "#527914", alpha: 1, roughness: 1},
-			}));
+            const materials = new Map(Object.entries({
+                0: {name: "yellowBlock", albedo: "#a6aa19", alpha: 1, roughness: 1},
+                1: {name: "greenBlock", albedo: "#108e29", alpha: 1, roughness: 0.6},
+                2: {name: "brownBlock", albedo: "#895409", alpha: 1, roughness: 1},
+                3: {name: "blueBlock", albedo: "#094a89", alpha: 1, roughness: 1},
+                4: {name: "whiteBlock", albedo: "#ffffff", alpha: 1, roughness: 0},
+                5: {name: "blackBlock", albedo: "#000000", alpha: 1, roughness: 0},
+                6: {name: "redBlock", albedo: "#aa1919", alpha: 1, roughness: 0.6},
+                7: {name: "purpleBlock", albedo: "#8a19aa", alpha: 1, roughness: 0.41},
+                8: {name: "sunBlock", albedo: "#ffff00", alpha: 1, roughness: 0},
+                9: {name: "orangeBlock", albedo: "#ff8900", alpha: 1, roughness: 1},
+                10: {name: "pinkBlock", albedo: "#ff59ad", alpha: 1, roughness: 1},
+                11: {name: "lightBlueBlock", albedo: "#66a8e8", alpha: 1, roughness: 1},
+                12: {name: "lightBrownBlock", albedo: "#b4944c", alpha: 1, roughness: 0.18},
+                13: {name: "lightGrayBlock", albedo: "#b1b1b1", alpha: 1, roughness: 1},
+                14: {name: "darkGrayBlock", albedo: "#464646", alpha: 1, roughness: 1},
+                15: {name: "brightRedBlock", albedo: "#ff0000", alpha: 1, roughness: 1},
+                16: {name: "aquaBlock", albedo: "#00ffb1", alpha: 1, roughness: 1},
+                17: {name: "glassBlock", albedo: "#9d9d9d", alpha: 0.4/*0.172549*/, roughness: 1},
+                18: {name: "tealBlock", albedo: "#2791a5", alpha: 1, roughness: 1},
+                19: {name: "magentaBlock", albedo: "#ff00be", alpha: 1, roughness: 1},
+                20: {name: "limeBlock", albedo: "#4aff00", alpha: 1, roughness: 1},
+                21: {name: "creamBlock", albedo: "#f3d793", alpha: 1, roughness: 1},
+                56: {name: "darkCyanBlock", albedo: "#0d363a", alpha: 1, roughness: 1},
+                57: {name: "darkBlueBlock", albedo: "#000033", alpha: 1, roughness: 1},
+                58: {name: "darkPinkBlock", albedo: "#330033", alpha: 1, roughness: 1},
+                59: {name: "darkPurpleBlock", albedo: "#140033", alpha: 1, roughness: 1},
+                60: {name: "darkRedBlock", albedo: "#330000", alpha: 1, roughness: 1},
+                61: {name: "darkYellowBlock", albedo: "#333300", alpha: 1, roughness: 1},
+                62: {name: "lightGrayBlockHalfAlpha", albedo: "#b0b0b0", alpha: 0.65098, roughness: 1},
+                63: {name: "pastelBlueBlock", albedo: "#a3a5ff", alpha: 1, roughness: 1},
+                64: {name: "pastelGreenBlock", albedo: "#ccffbb", alpha: 1, roughness: 1},
+                65: {name: "pastelPurpleBlock", albedo: "#cb9fff", alpha: 1, roughness: 1},
+                66: {name: "pastelRedBlock", albedo: "#ffc3c3", alpha: 1, roughness: 1},
+                67: {name: "pastelCyanBlock", albedo: "#a3fffb", alpha: 1, roughness: 1},
+                68: {name: "goldBlock", albedo: "#ecbd00", alpha: 1, roughness: 0},
+                69: {name: "silverBlock", albedo: "#bec2cb", alpha: 1, roughness: 0},
+                82: {name: "transparentWhiteBlock", albedo: "#ffffff", alpha: 0.65098, roughness: 1},
+                83: {name: "transparentBlackBlock", albedo: "#000000", alpha: 0.65098, roughness: 1},
+                84: {name: "transparentRedBlock", albedo: "#aa1919", alpha: 0.65098, roughness: 1},
+                85: {name: "transparentBlueBlock", albedo: "#094a89", alpha: 0.65098, roughness: 1},
+                86: {name: "transparentGreenBlock", albedo: "#108e29", alpha: 0.65098, roughness: 1},
+                87: {name: "transparentYellowBlock", albedo: "#ffff00", alpha: 0.65098, roughness: 1},
+                88: {name: "transparentPurpleBlock", albedo: "#8a19aa", alpha: 0.65098, roughness: 1},
+                89: {name: "transparentOrangeBlock", albedo: "#ff8900", alpha: 0.65098, roughness: 1},
+                90: {name: "transparentBrownBlock", albedo: "#895409", alpha: 0.65098, roughness: 1},
+                91: {name: "cyanBlock", albedo: "#00ffff", alpha: 1, roughness: 1},
+                92: {name: "plumBlock", albedo: "#991b51", alpha: 1, roughness: 0.6},
+                93: {name: "navyBlock", albedo: "#000070", alpha: 1, roughness: 1},
+                94: {name: "turquoiseBlock", albedo: "#029f84", alpha: 1, roughness: 0.41},
+                95: {name: "cobaltBlock", albedo: "#1818f0", alpha: 1, roughness: 0},
+                96: {name: "pastelWashedGreenBlock", albedo: "#77dd77", alpha: 1, roughness: 1},
+                97: {name: "pastelWashedPinkBlock", albedo: "#ff59ad", alpha: 1, roughness: 1},
+                98: {name: "mediumRedBlock", albedo: "#861515", alpha: 1, roughness: 1},
+                160: {name: "matteBlackBlock", albedo: "#000000", alpha: 1, roughness: 1},
+                163: {name: "transparentAquaBlock", albedo: "#00ffb1", alpha: 0.65098, roughness: 1},
+                164: {name: "transparentActualLimeBlock", albedo: "#80ff00", alpha: 0.65098, roughness: 1},
+                165: {name: "transparentBrightRedBlock", albedo: "#ff0000", alpha: 0.65098, roughness: 1},
+                166: {name: "transparentCobaltBlock", albedo: "#1818f0", alpha: 0.65098, roughness: 1},
+                167: {name: "transparentCreamBlock", albedo: "#f3d793", alpha: 0.65098, roughness: 1},
+                168: {name: "transparentCyanBlock", albedo: "#00ffff", alpha: 0.65098, roughness: 1},
+                169: {name: "transparentLightBrownBlock", albedo: "#b4944c", alpha: 0.65098, roughness: 1},
+                170: {name: "transparentLimeBlock", albedo: "#4aff00", alpha: 0.65098, roughness: 1},
+                171: {name: "transparentMagentaBlock", albedo: "#ff00be", alpha: 0.65098, roughness: 1},
+                172: {name: "transparentNavyBlock", albedo: "#000070", alpha: 0.65098, roughness: 1},
+                173: {name: "transparentPastelCyanBlock", albedo: "#a3fffb", alpha: 0.65098, roughness: 1},
+                174: {name: "transparentPastelRedBlock", albedo: "#ffc3c3", alpha: 0.65098, roughness: 1},
+                175: {name: "transparentPinkBlock", albedo: "#ff59ad", alpha: 0.65098, roughness: 1},
+                176: {name: "transparentTurquoiseBlock", albedo: "#029f84", alpha: 0.65098, roughness: 1},
+                177: {name: "actualLimeBlock", albedo: "#80ff00", alpha: 1, roughness: 0},
+                178: {name: "coralBlock", albedo: "#ff7f50", alpha: 1, roughness: 1},
+                181: {name: "decayedBlock", albedo: "#527914", alpha: 1, roughness: 1},
+            }));
 
             function serializeGridmapCell(cell) {
                 const x = Math.round(cell.position.x - 0.5);
                 const y = Math.round(cell.position.y - 0.5);
                 const z = Math.round(cell.position.z - 0.5);
                 const item = cell.material.userData.item;
-				// WARNING: I believe this implementation is incorrect for numbers > 255.
-				// It looks like the Godot code maybe reverses individual bytes?
-				return [
-					((y & 0xFFFF) << 16) | x & 0xFFFF,
-					z & 0xFFFF,
-					// Ignore octant navigation (?) layer for now.
-					// Hopefully that isn't important.
-					item & 0xFFFF,
-				];
+                // WARNING: I believe this implementation is incorrect for numbers > 255.
+                // It looks like the Godot code maybe reverses individual bytes?
+                return [
+                    ((y & 0xFFFF) << 16) | x & 0xFFFF,
+                    z & 0xFFFF,
+                    // Ignore octant navigation (?) layer for now.
+                    // Hopefully that isn't important.
+                    item & 0xFFFF,
+                ];
             }
 
-			function serializeCells(gridmap) {
+            function serializeCells(gridmap) {
                 var out = []
                 for (const cell of gridmap.getObjectByName("cells").children) {
                     out = out.concat(serializeGridmapCell(cell));
                 }
-				return out;
-			}
+                return out;
+            }
 
             function serializeMatrix(matrix) {
                 const el = matrix.elements;
@@ -269,8 +269,8 @@ data = {
                 return out;
             }
 
-			function serializeScene() {
-				return `[gd_scene load_steps=10 format=2]
+            function serializeScene() {
+                return `[gd_scene load_steps=10 format=2]
 
 [ext_resource path="res://nodes/panel_snappy.tscn" type="PackedScene" id=1]
 [ext_resource path="res://nodes/player.tscn" type="PackedScene" id=2]
@@ -322,39 +322,39 @@ script = ExtResource( 21 )
 [node name="Room" type="Node" parent="Panels"]
 ${serializePanels()}
 `
-			}
+            }
 
-			let camera, scene, raycaster, renderer;
-			let controls;
+            let camera, scene, raycaster, renderer;
+            let controls;
 
-			let selectedGridmap, gridmapMaterialId;
+            let selectedGridmap, gridmapMaterialId;
             let gridmaps;
 
-			let transformControl, transformControl2;
-			let panels;
+            let transformControl, transformControl2;
+            let panels;
             let selectedBox;
 
             let inspectorPane;
 
-			const pointer = new THREE.Vector2();
+            const pointer = new THREE.Vector2();
 
-			init();
+            init();
 
-			function init() {
-				renderer = new THREE.WebGLRenderer( { antialias: true } );
-				renderer.setPixelRatio( window.devicePixelRatio );
-				renderer.setSize( window.innerWidth, window.innerHeight );
+            function init() {
+                renderer = new THREE.WebGLRenderer( { antialias: true } );
+                renderer.setPixelRatio( window.devicePixelRatio );
+                renderer.setSize( window.innerWidth, window.innerHeight );
 
-				camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.1, 1000 );
-				camera.position.set(5, 5, 5);
-				camera.rotation.set(Math.PI/4, Math.PI/4, Math.PI/4);
+                camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.1, 1000 );
+                camera.position.set(5, 5, 5);
+                camera.rotation.set(Math.PI/4, Math.PI/4, Math.PI/4);
                 camera.layers.enable(2);
 
-				scene = new THREE.Scene();
-				scene.background = new THREE.Color( 0xf0f0f0 );
+                scene = new THREE.Scene();
+                scene.background = new THREE.Color( 0xf0f0f0 );
 
                 const playerCamera = new THREE.PerspectiveCamera( 70, 1, 0.01, 0.5 );
-				playerCamera.position.y = 1.5;
+                playerCamera.position.y = 1.5;
                 const player = new THREE.CameraHelper( playerCamera );
                 scene.add(playerCamera);
                 scene.add( player );
@@ -362,55 +362,55 @@ ${serializePanels()}
                 playerCapsule.position.y = 1;
                 scene.add( playerCapsule );
 
-				const sky = new Sky();
-				sky.scale.setScalar( 450000 );
-				scene.add( sky );
-				const sun = new THREE.Vector3();
-				const phi = THREE.MathUtils.degToRad( 0 );
-				const theta = THREE.MathUtils.degToRad( 180 );
-				sun.setFromSphericalCoords( 1, phi, theta );
-				sky.material.uniforms[ 'sunPosition' ].value.copy( sun );
-				sky.material.uniforms[ 'turbidity' ].value = 0.1;
-				sky.material.uniforms[ 'rayleigh' ].value = 0.01;
-				const pmremGenerator = new THREE.PMREMGenerator( renderer );
-				scene.environment = pmremGenerator.fromScene( scene, 0.04 ).texture;
-				pmremGenerator.dispose();
-				sky.material.uniforms[ 'turbidity' ].value = 0.5;
-				sky.material.uniforms[ 'rayleigh' ].value = 0.1;
+                const sky = new Sky();
+                sky.scale.setScalar( 450000 );
+                scene.add( sky );
+                const sun = new THREE.Vector3();
+                const phi = THREE.MathUtils.degToRad( 0 );
+                const theta = THREE.MathUtils.degToRad( 180 );
+                sun.setFromSphericalCoords( 1, phi, theta );
+                sky.material.uniforms[ 'sunPosition' ].value.copy( sun );
+                sky.material.uniforms[ 'turbidity' ].value = 0.1;
+                sky.material.uniforms[ 'rayleigh' ].value = 0.01;
+                const pmremGenerator = new THREE.PMREMGenerator( renderer );
+                scene.environment = pmremGenerator.fromScene( scene, 0.04 ).texture;
+                pmremGenerator.dispose();
+                sky.material.uniforms[ 'turbidity' ].value = 0.5;
+                sky.material.uniforms[ 'rayleigh' ].value = 0.1;
 
-				const ambientLight = new THREE.AmbientLight( 0xA0A0A0, 3 );
-				scene.add( ambientLight );
-				const directionalLight = new THREE.DirectionalLight( 0xA0A0A0, 3 );
-				directionalLight.position.set( 0.5, 1, 0.5 ).normalize();
-				scene.add( directionalLight );
+                const ambientLight = new THREE.AmbientLight( 0xA0A0A0, 3 );
+                scene.add( ambientLight );
+                const directionalLight = new THREE.DirectionalLight( 0xA0A0A0, 3 );
+                directionalLight.position.set( 0.5, 1, 0.5 ).normalize();
+                scene.add( directionalLight );
 
-				const axesHelper1 = new THREE.AxesHelper( 100 );
-				axesHelper1.renderOrder = 3;
+                const axesHelper1 = new THREE.AxesHelper( 100 );
+                axesHelper1.renderOrder = 3;
                 axesHelper1.position.y = 0.001;
-				scene.add( axesHelper1 );
-				const axesHelper2 = new THREE.AxesHelper( -100 );
-				axesHelper2.renderOrder = 3;
+                scene.add( axesHelper1 );
+                const axesHelper2 = new THREE.AxesHelper( -100 );
+                axesHelper2.renderOrder = 3;
                 axesHelper2.position.y = 0.001;
-				scene.add( axesHelper2 );
+                scene.add( axesHelper2 );
 
-				for (const [key, value] of materials) {
-					value.material = new THREE.MeshStandardMaterial( { color: value.albedo, roughness: value.roughness, opacity: value.alpha, transparent: value.alpha < 1 } );
+                for (const [key, value] of materials) {
+                    value.material = new THREE.MeshStandardMaterial( { color: value.albedo, roughness: value.roughness, opacity: value.alpha, transparent: value.alpha < 1 } );
                     value.material.userData = {
                         item: parseInt(key),
                     }
-				}
+                }
 
                 selectedBox = new THREE.BoxHelper(undefined, 0xffff00 );
                 selectedBox.visible = false;
                 selectedBox.renderOrder = 3;
                 scene.add(selectedBox);
 
-				const gridHelper = new THREE.GridHelper( 50, 50 );
-				gridHelper.position.y = 0;
-				gridHelper.renderOrder = 1;
-				scene.add( gridHelper );
+                const gridHelper = new THREE.GridHelper( 50, 50 );
+                gridHelper.position.y = 0;
+                gridHelper.renderOrder = 1;
+                scene.add( gridHelper );
 
-				gridmapMaterialId = 4;
+                gridmapMaterialId = 4;
                 gridmaps = new THREE.Group();
                 scene.add(gridmaps);
                 const gridmapFull = createGridmap(1);
@@ -471,20 +471,20 @@ ${serializePanels()}
                             item: cell.material.userData.item,
                         });
                     }
-					const file = new Blob([JSON.stringify(saved)], {
-						type: 'text/plain'
-					});
-					const element = document.createElement('a');
-					element.href = URL.createObjectURL(file);
-					element.download = PARAMS.name + '.json';
-					element.click();
+                    const file = new Blob([JSON.stringify(saved)], {
+                        type: 'text/plain'
+                    });
+                    const element = document.createElement('a');
+                    element.href = URL.createObjectURL(file);
+                    element.download = PARAMS.name + '.json';
+                    element.click();
                 });
                 controlPane.addButton({title:"Load"}).on("click", function(e) {
                     var input = document.createElement('input');
                     input.type = 'file';
                     input.accept = '.json';
-                    input.onchange = e => { 
-                        var file = e.target.files[0]; 
+                    input.onchange = e => {
+                        var file = e.target.files[0];
                         var reader = new FileReader();
                         reader.readAsText(file,'UTF-8');
                         reader.onload = readerEvent => {
@@ -530,19 +530,19 @@ ${serializePanels()}
                                 obj.visible = true;
                                 gridmapQuarter.add(obj);
                             }
-                            render();                            
+                            render();
                         }
                     }
                     input.click();
                 });
                 controlPane.addButton({title:"Export to Lingo TSCN"}).on("click", function(e) {
-					const file = new Blob([serializeScene()], {
-						type: 'text/plain'
-					});
-					const element = document.createElement('a');
-					element.href = URL.createObjectURL(file);
-					element.download = PARAMS.name + '.tscn';
-					element.click();
+                    const file = new Blob([serializeScene()], {
+                        type: 'text/plain'
+                    });
+                    const element = document.createElement('a');
+                    element.href = URL.createObjectURL(file);
+                    element.download = PARAMS.name + '.tscn';
+                    element.click();
                 });
                 const helpFolder = controlPane.addFolder({
                     title: 'Help',
@@ -562,56 +562,56 @@ ${serializePanels()}
                     </ul></div>
                 `
 
-				const planegeometry = new THREE.BoxGeometry( 50, 1, 50 );
-				const planematerial = new THREE.MeshStandardMaterial( materials.get("14").material );
-				const plane = new THREE.Mesh( planegeometry, planematerial );
-				plane.position.y = -0.501;
-				scene.add( plane );
+                const planegeometry = new THREE.BoxGeometry( 50, 1, 50 );
+                const planematerial = new THREE.MeshStandardMaterial( materials.get("14").material );
+                const plane = new THREE.Mesh( planegeometry, planematerial );
+                plane.position.y = -0.501;
+                scene.add( plane );
 
                 panels = new THREE.Group();
                 scene.add(panels);
 
-				raycaster = new THREE.Raycaster();
+                raycaster = new THREE.Raycaster();
 
-				document.body.appendChild( renderer.domElement );
+                document.body.appendChild( renderer.domElement );
 
-				controls = new OrbitControls( camera, renderer.domElement );
-				controls.update();
-				controls.addEventListener("change", function(e) { render() });
+                controls = new OrbitControls( camera, renderer.domElement );
+                controls.update();
+                controls.addEventListener("change", function(e) { render() });
 
-				transformControl = new TransformControls( camera, renderer.domElement );
-				transformControl.addEventListener( 'change', function(e) { render() } );
-				transformControl.addEventListener( 'dragging-changed', function ( event ) {
-					controls.enabled = !event.value && !transformControl2.dragging;
+                transformControl = new TransformControls( camera, renderer.domElement );
+                transformControl.addEventListener( 'change', function(e) { render() } );
+                transformControl.addEventListener( 'dragging-changed', function ( event ) {
+                    controls.enabled = !event.value && !transformControl2.dragging;
                     if (event.value) {
                         transformControl2.dragging = false;
                     }
-				} );
-				transformControl.setTranslationSnap(1);
-				transformControl.size = 1;
-				transformControl.showX = false;
-				transformControl.showZ = false;
-				transformControl.setRotationSnap(Math.PI / 2.0);
-				transformControl.setMode( 'rotate' );
-				scene.add( transformControl );
-				transformControl2 = new TransformControls( camera, renderer.domElement );
-				transformControl2.addEventListener( 'change', function(e) { render() } );
-				transformControl2.addEventListener( 'dragging-changed', function ( event ) {
-					controls.enabled = !event.value && !transformControl.dragging;
+                } );
+                transformControl.setTranslationSnap(1);
+                transformControl.size = 1;
+                transformControl.showX = false;
+                transformControl.showZ = false;
+                transformControl.setRotationSnap(Math.PI / 2.0);
+                transformControl.setMode( 'rotate' );
+                scene.add( transformControl );
+                transformControl2 = new TransformControls( camera, renderer.domElement );
+                transformControl2.addEventListener( 'change', function(e) { render() } );
+                transformControl2.addEventListener( 'dragging-changed', function ( event ) {
+                    controls.enabled = !event.value && !transformControl.dragging;
                     if (event.value) {
                         transformControl.dragging = false;
                     }
-				} );
-				transformControl2.setTranslationSnap(0.5);
-				transformControl2.size = 0.5;
-				scene.add( transformControl2 );
+                } );
+                transformControl2.setTranslationSnap(0.5);
+                transformControl2.size = 0.5;
+                scene.add( transformControl2 );
 
-				document.addEventListener( 'contextmenu', onContextMenu, false );
-				document.addEventListener( 'pointermove', onPointerMove );
-				document.addEventListener( 'pointerdown', onPointerDown );
-				document.addEventListener( 'pointerup', onPointerUp );
-				document.addEventListener( 'keydown', onDocumentKeyDown );
-				document.addEventListener( 'keyup', onDocumentKeyUp );
+                document.addEventListener( 'contextmenu', onContextMenu, false );
+                document.addEventListener( 'pointermove', onPointerMove );
+                document.addEventListener( 'pointerdown', onPointerDown );
+                document.addEventListener( 'pointerup', onPointerUp );
+                document.addEventListener( 'keydown', onDocumentKeyDown );
+                document.addEventListener( 'keyup', onDocumentKeyUp );
 
                 document.querySelector('.overlay-left').addEventListener('pointerdown', function(e) {e.stopPropagation();});
                 document.querySelector('.overlay-left').addEventListener('pointerup', function(e) {e.stopPropagation();});
@@ -624,34 +624,34 @@ ${serializePanels()}
                 document.querySelector('.overlay-right').addEventListener('keydown', function(e) {e.stopPropagation();});
                 document.querySelector('.overlay-right').addEventListener('keyup', function(e) {e.stopPropagation();});
 
-				window.addEventListener( 'resize', onWindowResize );
+                window.addEventListener( 'resize', onWindowResize );
 
-				render();
-			}
+                render();
+            }
 
             function createGridmap(scale) {
                 const gridmap = new THREE.Group();
                 gridmap.scale.set(scale, scale, scale);
                 gridmaps.add(gridmap);
-				const geometry = new THREE.BoxGeometry( 1, 1, 1 );
-				const gridmapPlaceholderCube = new THREE.Mesh( geometry, materials.get("4").material );
-				gridmapPlaceholderCube.position.set(1.5, 0.5, 0.5);
-				gridmapPlaceholderCube.renderOrder = 4;
+                const geometry = new THREE.BoxGeometry( 1, 1, 1 );
+                const gridmapPlaceholderCube = new THREE.Mesh( geometry, materials.get("4").material );
+                gridmapPlaceholderCube.position.set(1.5, 0.5, 0.5);
+                gridmapPlaceholderCube.renderOrder = 4;
                 gridmapPlaceholderCube.visible = false;
                 gridmapPlaceholderCube.name = "placeholder";
                 gridmap.add( gridmapPlaceholderCube);
                 const planegeometry2 = new THREE.PlaneGeometry( 50/scale, 50/scale );
-				const gridmapPlane = new THREE.Mesh( planegeometry2, new THREE.MeshStandardMaterial( {color: 0xffff00, side: THREE.DoubleSide} ) );
-				gridmapPlane.layers.set(1);
-				gridmapPlane.rotation.x = -Math.PI/2;
-				gridmapPlane.position.y = 0;
-				gridmapPlane.visible = false;
+                const gridmapPlane = new THREE.Mesh( planegeometry2, new THREE.MeshStandardMaterial( {color: 0xffff00, side: THREE.DoubleSide} ) );
+                gridmapPlane.layers.set(1);
+                gridmapPlane.rotation.x = -Math.PI/2;
+                gridmapPlane.position.y = 0;
+                gridmapPlane.visible = false;
                 gridmapPlane.name = "plane";
-				gridmap.add( gridmapPlane );
-				const gridHelper2 = new THREE.GridHelper( 50/scale, 50/scale, "orange", "orange" );
-				gridHelper2.rotation.x = Math.PI/2;
-				gridHelper2.renderOrder = 2;
-				gridmapPlane.add( gridHelper2 );
+                gridmap.add( gridmapPlane );
+                const gridHelper2 = new THREE.GridHelper( 50/scale, 50/scale, "orange", "orange" );
+                gridHelper2.rotation.x = Math.PI/2;
+                gridHelper2.renderOrder = 2;
+                gridmapPlane.add( gridHelper2 );
                 const gridmapCells = new THREE.Group();
                 gridmapCells.name = "cells";
                 gridmap.add(gridmapCells);
@@ -684,9 +684,9 @@ ${serializePanels()}
                     size = 400 / panel.userData.text.length;
                 }
                 ctx.font = `${size}px Lingo`;
-				ctx.fillStyle = "white";
+                ctx.fillStyle = "white";
                 ctx.textBaseline = 'middle';
-				ctx.textAlign = "center";
+                ctx.textAlign = "center";
                 if (type == "panel") {
                     ctx.fillText(panel.userData.text.toUpperCase(), 140, panel.userData.reverse ? 136 : 50);
                     ctx.fillStyle = "black";
@@ -711,20 +711,20 @@ ${serializePanels()}
             }
 
             function createPanel() {
-                const panelGeometry = new THREE.PlaneGeometry( 1, 1);				
-				const offscreen = new OffscreenCanvas(280, 180);
-				const ctx = offscreen.getContext("2d");
-				const panelMaterial = new THREE.MeshBasicMaterial();
-				panelMaterial.map = new THREE.CanvasTexture(offscreen);
-				const panelMesh = new THREE.Mesh( panelGeometry, panelMaterial );
-				panelMesh.position.set(0, 0, 0.501);
-				panelMesh.scale.set(0.9, 0.9, 0.9);
-				const panel = new THREE.Group()
-				panel.position.set(0.5, 0.5, 0.5);
-				panel.add(panelMesh);
-				const panelCollisionMesh = new THREE.Mesh(panelGeometry, new THREE.MeshBasicMaterial({side: THREE.DoubleSide}));
-				panelCollisionMesh.position.set(0, 0, 0.501);
-				panelCollisionMesh.scale.set(0.9, 0.9, 0.9);
+                const panelGeometry = new THREE.PlaneGeometry( 1, 1);
+                const offscreen = new OffscreenCanvas(280, 180);
+                const ctx = offscreen.getContext("2d");
+                const panelMaterial = new THREE.MeshBasicMaterial();
+                panelMaterial.map = new THREE.CanvasTexture(offscreen);
+                const panelMesh = new THREE.Mesh( panelGeometry, panelMaterial );
+                panelMesh.position.set(0, 0, 0.501);
+                panelMesh.scale.set(0.9, 0.9, 0.9);
+                const panel = new THREE.Group()
+                panel.position.set(0.5, 0.5, 0.5);
+                panel.add(panelMesh);
+                const panelCollisionMesh = new THREE.Mesh(panelGeometry, new THREE.MeshBasicMaterial({side: THREE.DoubleSide}));
+                panelCollisionMesh.position.set(0, 0, 0.501);
+                panelCollisionMesh.scale.set(0.9, 0.9, 0.9);
                 panelCollisionMesh.layers.set(3);
                 panel.add(panelCollisionMesh);
                 const box = new THREE.BoxHelper(panelMesh, 0xcccccc);
@@ -745,31 +745,31 @@ ${serializePanels()}
                 return panel;
             }
 
-			function onWindowResize() {
+            function onWindowResize() {
 
-				camera.aspect = window.innerWidth / window.innerHeight;
-				camera.updateProjectionMatrix();
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
 
-				renderer.setSize( window.innerWidth, window.innerHeight );
+                renderer.setSize( window.innerWidth, window.innerHeight );
 
-			}
+            }
 
-			function raycastGridmapCoordinates() {
+            function raycastGridmapCoordinates() {
                 const plane = selectedGridmap.getObjectByName("plane");
-				raycaster.setFromCamera( pointer, camera );
-				raycaster.layers.set( 1 ); 
-				const intersection = raycaster.intersectObject(plane);
-				if (intersection.length > 0) {
+                raycaster.setFromCamera( pointer, camera );
+                raycaster.layers.set( 1 );
+                const intersection = raycaster.intersectObject(plane);
+                if (intersection.length > 0) {
                     const scale = new THREE.Vector3();
                     plane.getWorldScale(scale);
                     const point = intersection[0].point.clone().divide(scale).floor();
-					point.y = plane.position.y;
-					return point;
-				}
-				return null;
-			}
+                    point.y = plane.position.y;
+                    return point;
+                }
+                return null;
+            }
 
-			function maybeAddToGridmap(point, event) {
+            function maybeAddToGridmap(point, event) {
                 const cells = selectedGridmap.getObjectByName("cells")
                 const placeholder = selectedGridmap.getObjectByName("placeholder");
                 var existing = null;
@@ -779,19 +779,19 @@ ${serializePanels()}
                         break;
                     }
                 }
-				if (existing && (event.buttons & 2 || ((event.buttons & 1 ) && existing.material.userData.item != gridmapMaterialId))) {
-					existing.removeFromParent();
-					existing = null;
-				}
-				if (event.buttons & 1 && !existing) {
-					const cube = placeholder.clone()
+                if (existing && (event.buttons & 2 || ((event.buttons & 1 ) && existing.material.userData.item != gridmapMaterialId))) {
+                    existing.removeFromParent();
+                    existing = null;
+                }
+                if (event.buttons & 1 && !existing) {
+                    const cube = placeholder.clone()
                     cube.name = "";
-					cube.renderOrder = 0;
-					cells.add(cube);
-				}
-			}
+                    cube.renderOrder = 0;
+                    cells.add(cube);
+                }
+            }
 
-			function onPointerMove( event ) {
+            function onPointerMove( event ) {
                 if (selectedGridmap) {
                     const placeholder = selectedGridmap.getObjectByName("placeholder");
                     pointer.set( ( event.clientX / window.innerWidth ) * 2 - 1, - ( event.clientY / window.innerHeight ) * 2 + 1 );
@@ -804,33 +804,33 @@ ${serializePanels()}
                         placeholder.visible = false;
                     }
                 }
-				render();
-			}
+                render();
+            }
 
-			function onPointerUp( event ) {
-			}
+            function onPointerUp( event ) {
+            }
 
-			function onPointerDown( event ) {
-				pointer.set( ( event.clientX / window.innerWidth ) * 2 - 1, - ( event.clientY / window.innerHeight ) * 2 + 1 );
-				if (selectedGridmap) {
-					const point = raycastGridmapCoordinates();
-					if (point) {
-						maybeAddToGridmap(point, event);
-					}
-				} else if (!transformControl.dragging && !transformControl2.dragging) {
-					raycaster.setFromCamera( pointer, camera );
-					raycaster.layers.set( 0 );
+            function onPointerDown( event ) {
+                pointer.set( ( event.clientX / window.innerWidth ) * 2 - 1, - ( event.clientY / window.innerHeight ) * 2 + 1 );
+                if (selectedGridmap) {
+                    const point = raycastGridmapCoordinates();
+                    if (point) {
+                        maybeAddToGridmap(point, event);
+                    }
+                } else if (!transformControl.dragging && !transformControl2.dragging) {
+                    raycaster.setFromCamera( pointer, camera );
+                    raycaster.layers.set( 0 );
                     raycaster.layers.enable(3);
-					const intersection = raycaster.intersectObjects(panels.children);
-					if (intersection.length > 0) {
+                    const intersection = raycaster.intersectObjects(panels.children);
+                    if (intersection.length > 0) {
                         selectPanel(intersection[0].object.parent);
-					} else {
+                    } else {
                         deselectAll();
                     }
-				}
+                }
 
-				render();
-			}
+                render();
+            }
 
             function duplicatePanel(panel) {
                 const duplicate = createPanel();
@@ -861,7 +861,7 @@ ${serializePanels()}
                 inspectorPane.addButton({title:"Delete"}).on("click", function(e) {
                     deselectAll();
                     panel.removeFromParent();
-					render();
+                    render();
                 })
                 const transformPane = inspectorPane.addFolder({
                     title: 'Transform',
@@ -891,7 +891,7 @@ ${serializePanels()}
                 answerInput.on('change', function(e) { redrawPanel(panel) });
                 const advancedPane = inspectorPane.addFolder({
                     title: 'Panel Advanced',
-                }); 
+                });
                 advancedPane.addInput(panel.userData, 'achievedText', {
                     label: 'achievement text',
                 });
@@ -913,9 +913,9 @@ ${serializePanels()}
                 updateVisibility();
             }
 
-			function onContextMenu( event ) {
-				event.preventDefault();
-			}
+            function onContextMenu( event ) {
+                event.preventDefault();
+            }
 
             function deselectGridmap( gridmap ) {
                 selectedGridmap = null;
@@ -962,22 +962,22 @@ ${serializePanels()}
                 const materialsElement = document.createElement("div");
                 materialsElement.classList.add("materials")
                 blocksFolder.element.appendChild(materialsElement);
-				for (const [key, value] of materials) {
-					const materialElement = document.createElement("div");
-					materialElement.classList.add("material");
-					materialElement.style.backgroundColor = value.albedo + Math.floor(value.alpha*255).toString(16).padStart(2, '0');
-					materialElement.id = `material_${key}`;
-					materialElement.addEventListener("click", function(e) {
-						gridmapMaterialId = parseInt(key, 10);
+                for (const [key, value] of materials) {
+                    const materialElement = document.createElement("div");
+                    materialElement.classList.add("material");
+                    materialElement.style.backgroundColor = value.albedo + Math.floor(value.alpha*255).toString(16).padStart(2, '0');
+                    materialElement.id = `material_${key}`;
+                    materialElement.addEventListener("click", function(e) {
+                        gridmapMaterialId = parseInt(key, 10);
                         if (selectedGridmap) {
-						    selectedGridmap.getObjectByName("placeholder").material = value.material;
+                            selectedGridmap.getObjectByName("placeholder").material = value.material;
                         }
                         const existing = document.querySelector(".selected-material")
                         if (existing) {
                             existing.classList.remove("selected-material");
                         }
                         materialElement.classList.add("selected-material");
-					})
+                    })
                     if (value.roughness < 1) {
                         var glossElement = document.createElement("div");
                         glossElement.classList.add("material-gloss");
@@ -992,7 +992,7 @@ ${serializePanels()}
                         delay: [200, 0],
                     });
                     materialsElement.appendChild(materialElement);
-				}
+                }
                 const helpFolder = inspectorPane.addFolder({
                     title: 'Help',
                 }).addSeparator();
@@ -1020,39 +1020,39 @@ ${serializePanels()}
                 }
             }
 
-			function onDocumentKeyDown( event ) {
-				if (selectedGridmap && event.code == "KeyQ" && !event.repeat) {
-					selectedGridmap.getObjectByName("plane").position.y -= 1;
-					render();
-				} else if (selectedGridmap && event.code == "KeyE" && !event.repeat) {
-					selectedGridmap.getObjectByName("plane").position.y += 1;
-					render();
-				} else if ((event.code == "Escape" || event.code == "Delete") && !event.repeat) {
+            function onDocumentKeyDown( event ) {
+                if (selectedGridmap && event.code == "KeyQ" && !event.repeat) {
+                    selectedGridmap.getObjectByName("plane").position.y -= 1;
+                    render();
+                } else if (selectedGridmap && event.code == "KeyE" && !event.repeat) {
+                    selectedGridmap.getObjectByName("plane").position.y += 1;
+                    render();
+                } else if ((event.code == "Escape" || event.code == "Delete") && !event.repeat) {
                     const selected = transformControl.object;
                     deselectAll();
                     if (event.code == "Delete" && selected) {
                         selected.removeFromParent();
                     }
-					render();
-				}
-			}
+                    render();
+                }
+            }
 
-			function onDocumentKeyUp( event ) {
-			}
+            function onDocumentKeyUp( event ) {
+            }
 
-			function render() {
+            function render() {
                 if (inspectorPane != null) {
                     inspectorPane.refresh();
                 }
                 selectedBox.update();
-				renderer.render( scene, camera );
-			}
+                renderer.render( scene, camera );
+            }
 
-		</script>
-		<div class="overlay-left">
+        </script>
+        <div class="overlay-left">
             <div class="lingo-title">Lingo RoomMate</div>
-		</div>
-		<div class="overlay-right">
-		</div>
-	</body>
+        </div>
+        <div class="overlay-right">
+        </div>
+    </body>
 </html>
