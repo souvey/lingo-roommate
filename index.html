@@ -244,7 +244,7 @@ transform = Transform( ${serializeMatrix(panel.matrixWorld) } )
                     } else if (panel.userData.type == "sign") {
                         out += `
 [node name="Sign_${panel.name}" parent="Decorations" instance=ExtResource( 4 )]
-value = ${JSON.stringify(panel.userData.text)}"
+value = ${JSON.stringify(panel.userData.text)}
 transform = Transform( ${serializeMatrix(panel.matrixWorld) } )
 `
                     }
