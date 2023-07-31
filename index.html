@@ -421,10 +421,10 @@ ${serializePanels()}
                 gridmaps.add(gridmapQuarter);
 
                 const controlPane = new Tweakpane.Pane({container: document.querySelector(".overlay-left"), title: 'Controls'});
-                controlPane.addButton({title:"Paint Blocks (Full)"}).on("click", function(e) {
+                controlPane.addButton({title:"Paint Blocks: Full"}).on("click", function(e) {
                     selectGridmap(gridmapFull); render();
                 });
-                controlPane.addButton({title:"Paint Blocks (Quarter)"}).on("click", function(e) {
+                controlPane.addButton({title:"Paint Blocks: Quarter"}).on("click", function(e) {
                     selectGridmap(gridmapQuarter); render();
                 });
                 controlPane.addButton({title:"Add New Panel/Sign"}).on("click", function(e) {
@@ -858,7 +858,7 @@ ${serializePanels()}
                 selectedBox.setFromObject(panel.children[0]);
                 inspectorPane = new Tweakpane.Pane({container: document.querySelector(".overlay-right"), title: 'Inspector'});
                 inspectorPane.addButton({title:"Duplicate"}).on("click", function(e) {duplicatePanel(panel); render()});
-                inspectorPane.addButton({title:"Delete"}).on("click", function(e) {
+                inspectorPane.addButton({title:"Delete [DEL]"}).on("click", function(e) {
                     deselectAll();
                     panel.removeFromParent();
                     render();
@@ -947,12 +947,12 @@ ${serializePanels()}
                 selectedGridmap.getObjectByName("placeholder").material = materials.get(gridmapMaterialId.toString()).material;
                 inspectorPane = new Tweakpane.Pane({container: document.querySelector(".overlay-right"), title: gridmap.name});
                 inspectorPane.on('change', function(e) { render() });
-                inspectorPane.addButton({title:"Stop Editing"}).on('click', function(e) {
+                inspectorPane.addButton({title:"Stop Editing [ESC]"}).on('click', function(e) {
                     deselectAll();
                     render();
                 });
                 inspectorPane.addInput(selectedGridmap.getObjectByName("plane").position, 'y', {
-                    label: 'Floor',
+                    label: 'Floor [Q↓ E↑]',
                     step: 1,
                 });
                 const blocksFolder = inspectorPane.addFolder({
